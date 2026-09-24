@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+*.joblib
+*.pkl
+.env
+node_modules/
+dist/
+build/
