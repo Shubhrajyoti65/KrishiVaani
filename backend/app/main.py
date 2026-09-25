@@ -7,6 +7,9 @@ from backend.app.db.session import db_manager
 from backend.app.services.crop_recommendation.router import router as crop_router
 from backend.app.services.farmer_profile.router import router as farmer_router
 from backend.app.services.yield_prediction.router import router as yield_router
+from backend.app.services.weather_service.router import router as weather_router
+from backend.app.services.disease_detection.router import router as disease_router
+from backend.app.services.satellite_service.router import router as satellite_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -48,6 +51,9 @@ async def health_check():
 app.include_router(crop_router, prefix=settings.API_V1_STR)
 app.include_router(farmer_router, prefix=settings.API_V1_STR)
 app.include_router(yield_router, prefix=settings.API_V1_STR)
+app.include_router(weather_router, prefix=settings.API_V1_STR)
+app.include_router(disease_router, prefix=settings.API_V1_STR)
+app.include_router(satellite_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
