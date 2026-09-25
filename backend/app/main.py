@@ -1,7 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+
 from backend.app.core.config import settings
+from backend.app.db.session import db_manager
 from backend.app.services.crop_recommendation.router import router as crop_router
+from backend.app.services.farmer_profile.router import router as farmer_router
+from backend.app.services.yield_prediction.router import router as yield_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize DB connection
+    await db_manager.connect()
+    yield
+    # Shutdown: Close DB connection
+    await db_manager.close()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -9,6 +22,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS Middleware setup
@@ -26,11 +40,14 @@ async def health_check():
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
+        "database_connected": db_manager.is_connected,
         "version": "1.0.0"
     }
 
 # Include routers
 app.include_router(crop_router, prefix=settings.API_V1_STR)
+app.include_router(farmer_router, prefix=settings.API_V1_STR)
+app.include_router(yield_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
