@@ -70,8 +70,17 @@ class CropRecommendationEngine:
             except Exception:
                 pass
         
-        # Train model if not present
-        df = generate_synthetic_agri_dataset()
+        custom_csv_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", "data", "crop_recommendation", "Crop_recommendation.csv"
+        )
+        if os.path.exists(custom_csv_path):
+            try:
+                df = pd.read_csv(custom_csv_path)
+            except Exception:
+                df = generate_synthetic_agri_dataset()
+        else:
+            df = generate_synthetic_agri_dataset()
+
         X = df[["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]]
         y = df["label"]
         
@@ -79,6 +88,7 @@ class CropRecommendationEngine:
         clf.fit(X, y)
         self.model = clf
         joblib.dump(clf, MODEL_FILE_PATH)
+
 
     def assess_soil_health(self, N: float, P: float, K: float, ph: float) -> Dict[str, str]:
         assessment = {}

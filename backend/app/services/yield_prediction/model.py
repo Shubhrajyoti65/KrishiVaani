@@ -77,7 +77,17 @@ class YieldPredictionEngine:
             except Exception:
                 pass
 
-        df = generate_synthetic_yield_dataset()
+        custom_csv_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", "data", "yield_prediction", "crop_yield.csv"
+        )
+        if os.path.exists(custom_csv_path):
+            try:
+                df = pd.read_csv(custom_csv_path)
+            except Exception:
+                df = generate_synthetic_yield_dataset()
+        else:
+            df = generate_synthetic_yield_dataset()
+
         df_encoded = pd.get_dummies(df, columns=["crop"])
         X = df_encoded.drop(columns=["yield_per_acre"])
         y = df_encoded["yield_per_acre"]
@@ -86,6 +96,7 @@ class YieldPredictionEngine:
         rf.fit(X, y)
         self.model = rf
         joblib.dump((rf, list(X.columns)), MODEL_FILE_PATH)
+
 
     def predict(self, req: YieldPredictionRequest) -> YieldPredictionResponse:
         rf_tuple = joblib.load(MODEL_FILE_PATH) if not isinstance(self.model, tuple) else self.model

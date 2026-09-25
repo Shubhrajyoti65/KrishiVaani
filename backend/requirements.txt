@@ -12,3 +12,5 @@ pymongo>=4.5.0
 pillow>=10.0.0
 python-multipart>=0.0.6
 earthengine-api>=0.1.370
+langchain>=0.1.0
+langchain-core>=0.1.0
