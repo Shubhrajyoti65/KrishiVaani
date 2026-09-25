@@ -11,6 +11,7 @@ from backend.app.services.weather_service.router import router as weather_router
 from backend.app.services.disease_detection.router import router as disease_router
 from backend.app.services.satellite_service.router import router as satellite_router
 from backend.app.services.chatbot_agent.router import router as chat_router
+from backend.app.services.voice_language_service.router import router as voice_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,6 +57,7 @@ app.include_router(weather_router, prefix=settings.API_V1_STR)
 app.include_router(disease_router, prefix=settings.API_V1_STR)
 app.include_router(satellite_router, prefix=settings.API_V1_STR)
 app.include_router(chat_router, prefix=settings.API_V1_STR)
+app.include_router(voice_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
