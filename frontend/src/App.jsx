@@ -6,8 +6,12 @@ import YieldCalculator from './components/YieldCalculator';
 import DiseaseScanner from './components/DiseaseScanner';
 import SatelliteTracker from './components/SatelliteTracker';
 import ChatbotWidget from './components/ChatbotWidget';
+import FertilizerAdvisor from './components/FertilizerAdvisor';
+import CropCalendar from './components/CropCalendar';
+import CropRotation from './components/CropRotation';
 import {
   Sprout, LineChart, Leaf, CloudSun, Satellite, MessageSquare,
+  FlaskConical, CalendarDays, RefreshCw,
   ArrowRight, Star, Users, TrendingUp, Award, ChevronRight, Zap
 } from 'lucide-react';
 
@@ -26,9 +30,27 @@ const FEATURES = [
     stat: '₹ MSP', statLabel: 'live prices',
   },
   {
-    id: 'disease', icon: Leaf, color: 'brown',
+    id: 'fertilizer', icon: FlaskConical, color: 'brown',
+    title: 'Fertilizer Advisor',
+    desc: 'ICAR-based Urea/DAP/MOP dose recommendation with deficiency diagnosis',
+    stat: 'ICAR', statLabel: 'guidelines',
+  },
+  {
+    id: 'calendar', icon: CalendarDays, color: 'blue',
+    title: 'Crop Calendar',
+    desc: 'State-wise sowing & harvesting windows from Agriculture Dept bulletins',
+    stat: '10+', statLabel: 'crops',
+  },
+  {
+    id: 'rotation', icon: RefreshCw, color: 'purple',
+    title: 'Crop Rotation',
+    desc: 'Agronomic rotation rules for better soil health and pest control',
+    stat: 'N+P+K', statLabel: 'balanced',
+  },
+  {
+    id: 'disease', icon: Leaf, color: 'green',
     title: 'Leaf Disease Scanner',
-    desc: 'Computer Vision photo upload with organic cure remedies in your language',
+    desc: 'Computer Vision photo upload with organic cure remedies',
     stat: '38+', statLabel: 'diseases',
   },
   {
@@ -47,7 +69,7 @@ const FEATURES = [
     id: 'chatbot', icon: MessageSquare, color: 'purple',
     title: 'AI Farming Assistant',
     desc: 'LangChain-powered chatbot answering farming queries in Hindi, Odia & English',
-    stat: '3 lang', statLabel: 'supported',
+    stat: '9 tools', statLabel: 'connected',
   },
 ];
 
@@ -359,12 +381,15 @@ export default function App() {
                 </button>
               </div>
 
-              {activeTab === 'crop-rec'  && <CropRecommendationCard />}
-              {activeTab === 'yield'     && <YieldCalculator />}
-              {activeTab === 'disease'   && <DiseaseScanner />}
-              {activeTab === 'weather'   && <WeatherWidget />}
-              {activeTab === 'satellite' && <SatelliteTracker />}
-              {activeTab === 'chatbot'   && <ChatbotWidget currentLang={currentLang} />}
+              {activeTab === 'crop-rec'   && <CropRecommendationCard />}
+              {activeTab === 'yield'      && <YieldCalculator />}
+              {activeTab === 'disease'    && <DiseaseScanner />}
+              {activeTab === 'weather'    && <WeatherWidget />}
+              {activeTab === 'satellite'  && <SatelliteTracker />}
+              {activeTab === 'chatbot'    && <ChatbotWidget currentLang={currentLang} />}
+              {activeTab === 'fertilizer' && <FertilizerAdvisor />}
+              {activeTab === 'calendar'   && <CropCalendar />}
+              {activeTab === 'rotation'   && <CropRotation />}
             </div>
           </div>
         )}

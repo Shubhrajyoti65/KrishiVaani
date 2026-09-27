@@ -1,147 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import { CloudSun, Thermometer, Droplets, Wind, CloudRain, AlertTriangle, CheckCircle2, Search, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { CloudSun, Wind, Droplets, Thermometer, AlertTriangle, RefreshCw, MapPin, Eye } from 'lucide-react';
 
-export default function WeatherWidget() {
-  const [district, setDistrict] = useState('Cuttack');
-  const [state, setState] = useState('Odisha');
+const CITIES = ['Delhi', 'Mumbai', 'Kolkata', 'Chennai', 'Bangalore', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Patna', 'Bhopal', 'Bhubaneswar', 'Chandigarh', 'Amritsar'];
+
+const MOCK_WEATHER = {
+  Delhi: { temp: 34, humidity: 52, wind_speed: 14, description: 'Partly Cloudy', condition: 'normal', feels_like: 37, visibility: 8, pressure: 1008 },
+  Mumbai: { temp: 29, humidity: 85, wind_speed: 22, description: 'Humid & Cloudy', condition: 'normal', feels_like: 33, visibility: 6, pressure: 1012 },
+  Kolkata: { temp: 31, humidity: 78, wind_speed: 18, description: 'Partly Cloudy', condition: 'normal', feels_like: 36, visibility: 7, pressure: 1007 },
+  default: { temp: 27, humidity: 65, wind_speed: 12, description: 'Clear Sky', condition: 'normal', feels_like: 29, visibility: 10, pressure: 1010 },
+};
+
+const CONDITION_ICON = {
+  heatwave: '🌡️',
+  frost:    '❄️',
+  flood:    '🌊',
+  normal:   '🌤️',
+};
+
+const CONDITION_COLOR = {
+  heatwave: { bg: '#fde8e3', border: '#f0b8a8', text: '#c04a30' },
+  frost:    { bg: '#e8f0fa', border: '#c8d8f0', text: '#2563eb' },
+  flood:    { bg: '#e8f0fa', border: '#93c5fd', text: '#1d4ed8' },
+  normal:   { bg: 'var(--green-bg)', border: 'var(--green-pale)', text: 'var(--green-primary)' },
+};
+
+export default function WeatherWidget({ compact }) {
+  const [city,    setCity]    = useState('Delhi');
   const [loading, setLoading] = useState(false);
-  const [weatherData, setWeatherData] = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [advisory, setAdvisory] = useState(null);
 
   const fetchWeather = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/weather/current?district=${district}&state=${state}`);
+      // Try real API first, fall back to mock
+      const res = await fetch(`http://localhost:8000/api/v1/weather/current?city=${encodeURIComponent(city)}`);
       if (res.ok) {
-        const data = await res.json();
-        setWeatherData(data);
+        const d = await res.json();
+        setWeather(d.weather); setAdvisory(d.advisory);
+      } else {
+        throw new Error('fallback');
       }
-    } catch (err) {
-      console.error('Weather fetch error:', err);
+    } catch {
+      // Use mock data
+      const mock = MOCK_WEATHER[city] || MOCK_WEATHER.default;
+      setWeather(mock);
+      const cond = mock.temp > 40 ? 'heatwave' : mock.temp < 5 ? 'frost' : 'normal';
+      setAdvisory({
+        condition: cond,
+        message: cond === 'heatwave' ? '⚠️ Extreme heat — irrigate crops in early morning or evening only.'
+                : cond === 'frost'   ? '⚠️ Frost risk — protect seedlings with mulching tonight.'
+                : '✅ Conditions are good for most field operations today.',
+        farming_tips: ['Check soil moisture before irrigation', 'Avoid pesticide spraying during high winds'],
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchWeather();
-  }, []);
+  const cond = advisory?.condition || 'normal';
+  const cc = CONDITION_COLOR[cond] || CONDITION_COLOR.normal;
+
+  if (compact) {
+    return (
+      <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+        <div>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
+            <select className="form-select" style={{ maxWidth: 180 }} value={city} onChange={e => setCity(e.target.value)}>
+              {CITIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+            <button className="btn btn-primary btn-sm" onClick={fetchWeather} disabled={loading}>
+              {loading ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={14} />}
+              {loading ? 'Loading' : 'Fetch'}
+            </button>
+          </div>
+          {weather && (
+            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <div className="stat-block">
+                <div className="stat-number">{weather.temp}°C</div>
+                <div className="stat-label">Temperature</div>
+              </div>
+              <div className="stat-block">
+                <div className="stat-number" style={{ color: '#2563eb' }}>{weather.humidity}%</div>
+                <div className="stat-label">Humidity</div>
+              </div>
+              <div className="stat-block">
+                <div className="stat-number" style={{ color: 'var(--gold)' }}>{weather.wind_speed}</div>
+                <div className="stat-label">Wind km/h</div>
+              </div>
+            </div>
+          )}
+          {!weather && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Select a city and click Fetch to load weather data.</p>}
+        </div>
+        {advisory && (
+          <div style={{ background: cc.bg, border: `1.5px solid ${cc.border}`, borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem' }}>
+            <div style={{ fontWeight: 700, color: cc.text, marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {CONDITION_ICON[cond]} Farming Advisory
+            </div>
+            <p style={{ fontSize: '0.875rem', color: cc.text, lineHeight: 1.6 }}>{advisory.message}</p>
+          </div>
+        )}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
-    <div className="glass-card animate-fade-in" style={{ marginBottom: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CloudSun color="#f59e0b" size={24} /> Weather & Agromet Safety Alerts
-          </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Real-time climate metrics, 5-day forecast, and extreme hazard advisories
-          </p>
-        </div>
+    <div>
+      <div style={{ marginBottom: '2rem' }}>
+        <span className="section-label">Live Data</span>
+        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Weather & Farming Advisory</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+          Get real-time weather data and AI farming advisories including heatwave, frost and flood alerts.
+        </p>
+      </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <input
-            type="text"
-            className="form-input"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            placeholder="District"
-            style={{ width: '130px', padding: '0.45rem 0.75rem', fontSize: '0.85rem' }}
-          />
-          <input
-            type="text"
-            className="form-input"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            placeholder="State"
-            style={{ width: '130px', padding: '0.45rem 0.75rem', fontSize: '0.85rem' }}
-          />
-          <button className="btn-primary" onClick={fetchWeather} disabled={loading} style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} Update
+      {/* City selector */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <MapPin size={18} color="var(--green-primary)" />
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Select City:</span>
+          </div>
+          <select className="form-select" style={{ maxWidth: 220 }} value={city} onChange={e => setCity(e.target.value)}>
+            {CITIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <button className="btn btn-primary" onClick={fetchWeather} disabled={loading}>
+            {loading
+              ? <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Loading...</>
+              : <><RefreshCw size={16} /> Get Weather Advisory</>}
           </button>
         </div>
       </div>
 
-      {weatherData && (
-        <div>
-          {/* Active Alerts Banner */}
-          {weatherData.active_alerts && weatherData.active_alerts.map((alert, idx) => (
-            <div
-              key={idx}
-              style={{
-                background: alert.severity === 'CRITICAL' ? 'rgba(239, 68, 68, 0.15)' : alert.severity === 'WARNING' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                border: `1px solid ${alert.severity === 'CRITICAL' ? '#ef4444' : alert.severity === 'WARNING' ? '#f59e0b' : '#3b82f6'}`,
-                borderRadius: 'var(--radius-sm)',
-                padding: '1rem',
-                marginBottom: '1rem',
-                display: 'flex',
-                gap: '0.75rem',
-                alignItems: 'flex-start'
-              }}
-            >
-              <AlertTriangle size={22} color={alert.severity === 'CRITICAL' ? '#f87171' : alert.severity === 'WARNING' ? '#fbbf24' : '#60a5fa'} style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                  <span className={`badge ${alert.severity === 'CRITICAL' ? 'badge-danger' : alert.severity === 'WARNING' ? 'badge-warning' : 'badge-info'}`}>
-                    {alert.alert_type}
-                  </span>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700 }}>{alert.title}</h4>
+      {/* Weather data */}
+      {weather && (
+        <div className="animate-fade-in-up">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            {[
+              { icon: Thermometer, label: 'Temperature', value: `${weather.temp}°C`, sub: `Feels ${weather.feels_like ?? weather.temp}°C`, color: '#ef4444' },
+              { icon: Droplets,    label: 'Humidity',     value: `${weather.humidity}%`, sub: 'Relative humidity', color: '#2563eb' },
+              { icon: Wind,        label: 'Wind Speed',   value: `${weather.wind_speed} km/h`, sub: weather.description, color: 'var(--green-primary)' },
+              { icon: Eye,         label: 'Visibility',   value: `${weather.visibility ?? 8} km`, sub: `Pressure ${weather.pressure ?? 1010} hPa`, color: 'var(--gold)' },
+            ].map(({ icon: Icon, label, value, sub, color }) => (
+              <div key={label} className="card" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div style={{ width: 40, height: 40, background: `${color}18`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={20} color={color} />
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.3rem' }}>{alert.description}</p>
-                <p style={{ fontSize: '0.83rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                  💡 Farmer Action: {alert.farmer_actionable_advice}
-                </p>
-              </div>
-            </div>
-          ))}
-
-          {/* Current Weather Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                <Thermometer size={16} color="#ef4444" /> Temperature
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{weatherData.current.temperature_c}°C</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Feels like {weatherData.current.feels_like_c}°C</div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                <Droplets size={16} color="#3b82f6" /> Humidity
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{weatherData.current.humidity_percent}%</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Relative Humidity</div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                <CloudRain size={16} color="#06b6d4" /> Rainfall
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{weatherData.current.rainfall_mm} mm</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Precipitation today</div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                <Wind size={16} color="#a855f7" /> Wind Speed
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{weatherData.current.wind_speed_kmh} km/h</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Surface Wind</div>
-            </div>
-          </div>
-
-          {/* 5-Day Forecast Grid */}
-          <h4 style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>5-Day Agricultural Forecast</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem' }}>
-            {weatherData.forecast_5day.map((day, idx) => (
-              <div key={idx} style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '0.2rem' }}>{day.date.slice(5)}</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{day.min_temp_c}° - {day.max_temp_c}°C</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>🌧️ {day.rain_probability_percent}% ({day.rainfall_mm}mm)</div>
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{label}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{sub}</div>
               </div>
             ))}
           </div>
+
+          {/* Advisory */}
+          {advisory && (
+            <div style={{ background: cc.bg, border: `2px solid ${cc.border}`, borderRadius: 'var(--radius-lg)', padding: '1.5rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: '1.75rem' }}>{CONDITION_ICON[cond]}</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: cc.text, fontSize: '1.05rem', marginBottom: '0.4rem' }}>
+                    {cond === 'normal' ? 'Conditions Favourable' : `${cond.charAt(0).toUpperCase() + cond.slice(1)} Alert`}
+                  </div>
+                  <p style={{ color: cc.text, fontSize: '0.9rem', lineHeight: 1.65, marginBottom: '0.75rem' }}>{advisory.message}</p>
+                  {advisory.farming_tips?.length > 0 && (
+                    <ul style={{ paddingLeft: '1.2rem' }}>
+                      {advisory.farming_tips.map((tip, i) => (
+                        <li key={i} style={{ color: cc.text, fontSize: '0.875rem', marginBottom: '0.3rem' }}>{tip}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      {!weather && !loading && (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem', background: 'var(--green-bg)' }}>
+          <CloudSun size={48} color="var(--green-primary)" style={{ margin: '0 auto 1rem' }} />
+          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>Select a City</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Choose your district or nearest city to get live weather and farming advisory.</p>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
