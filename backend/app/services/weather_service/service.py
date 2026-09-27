@@ -9,8 +9,9 @@ from backend.app.services.weather_service.schema import (
     WeatherAlert,
     WeatherAdvisoryResponse,
 )
+from backend.app.core.config import settings
 
-OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY", None)
+OPENWEATHERMAP_API_KEY = settings.OPENWEATHERMAP_API_KEY
 
 class WeatherService:
     
@@ -19,14 +20,22 @@ class WeatherService:
         if query.district and query.state:
             location_name = f"{query.district}, {query.state}"
 
-        # If OpenWeatherMap API key exists and coordinates are provided, try live API
-        if OPENWEATHERMAP_API_KEY and query.latitude and query.longitude:
-            try:
-                return await self._fetch_openweather_data(query.latitude, query.longitude, location_name)
-            except Exception:
-                pass  # Fall back to simulated agromet weather service
+        if OPENWEATHERMAP_API_KEY:
+            # Try by lat/lon first (most precise)
+            if query.latitude and query.longitude:
+                try:
+                    return await self._fetch_openweather_data(query.latitude, query.longitude, location_name)
+                except Exception:
+                    pass
+            # Fallback: try by city name (district, IN)
+            if query.district or query.state:
+                city = f"{query.district or query.state},IN"
+                try:
+                    return await self._fetch_openweather_by_city(city, location_name)
+                except Exception:
+                    pass
 
-        # Default fallback: realistic agromet simulation
+        # Final fallback: realistic agromet simulation
         return self._generate_simulated_weather(query, location_name)
 
     def generate_weather_alerts(self, current: CurrentWeather, forecast: List[DailyForecast]) -> List[WeatherAlert]:
@@ -161,46 +170,53 @@ class WeatherService:
             agromet_advisories=advisories
         )
 
+    async def _parse_owm_response(self, data: dict, location_name: str) -> WeatherAdvisoryResponse:
+        """Parse OpenWeatherMap current weather JSON into WeatherAdvisoryResponse."""
+        current = CurrentWeather(
+            temperature_c=round(data["main"]["temp"], 1),
+            feels_like_c=round(data["main"]["feels_like"], 1),
+            humidity_percent=data["main"]["humidity"],
+            wind_speed_kmh=round(data["wind"]["speed"] * 3.6, 1),
+            rainfall_mm=data.get("rain", {}).get("1h", 0.0),
+            condition=data["weather"][0]["description"].title(),
+            icon_code=data["weather"][0]["icon"]
+        )
+        today = datetime.now()
+        forecast = []
+        for i in range(1, 6):
+            forecast.append(DailyForecast(
+                date=(today + timedelta(days=i)).strftime("%Y-%m-%d"),
+                min_temp_c=round(current.temperature_c - 4, 1),
+                max_temp_c=round(current.temperature_c + 3, 1),
+                humidity_percent=current.humidity_percent,
+                rain_probability_percent=35.0,
+                rainfall_mm=round(current.rainfall_mm * 0.8, 1),
+                condition="Partly Cloudy"
+            ))
+        alerts = self.generate_weather_alerts(current, forecast)
+        advisories = self.generate_agromet_advisories(current, alerts)
+        return WeatherAdvisoryResponse(
+            location_name=location_name,
+            current=current,
+            forecast_5day=forecast,
+            active_alerts=alerts,
+            agromet_advisories=advisories
+        )
+
     async def _fetch_openweather_data(self, lat: float, lon: float, location_name: str) -> WeatherAdvisoryResponse:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric"
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            url = (f"https://api.openweathermap.org/data/2.5/weather"
+                   f"?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
             resp = await client.get(url)
             resp.raise_for_status()
-            data = resp.json()
+            return await self._parse_owm_response(resp.json(), location_name)
 
-            current = CurrentWeather(
-                temperature_c=data["main"]["temp"],
-                feels_like_c=data["main"]["feels_like"],
-                humidity_percent=data["main"]["humidity"],
-                wind_speed_kmh=round(data["wind"]["speed"] * 3.6, 1),
-                rainfall_mm=data.get("rain", {}).get("1h", 0.0),
-                condition=data["weather"][0]["description"].title(),
-                icon_code=data["weather"][0]["icon"]
-            )
-
-            # Build basic 5-day forecast structure
-            forecast = []
-            today = datetime.now()
-            for i in range(1, 6):
-                forecast.append(DailyForecast(
-                    date=(today + timedelta(days=i)).strftime("%Y-%m-%d"),
-                    min_temp_c=current.temperature_c - 4,
-                    max_temp_c=current.temperature_c + 3,
-                    humidity_percent=current.humidity_percent,
-                    rain_probability_percent=30.0,
-                    rainfall_mm=0.0,
-                    condition="Partly Cloudy"
-                ))
-
-            alerts = self.generate_weather_alerts(current, forecast)
-            advisories = self.generate_agromet_advisories(current, alerts)
-
-            return WeatherAdvisoryResponse(
-                location_name=location_name,
-                current=current,
-                forecast_5day=forecast,
-                active_alerts=alerts,
-                agromet_advisories=advisories
-            )
+    async def _fetch_openweather_by_city(self, city: str, location_name: str) -> WeatherAdvisoryResponse:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            url = (f"https://api.openweathermap.org/data/2.5/weather"
+                   f"?q={city}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return await self._parse_owm_response(resp.json(), location_name)
 
 weather_service = WeatherService()
