@@ -1,5 +1,9 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
+
+_BACKEND_DIR = Path(__file__).resolve().parents[2]
+_ROOT_DIR = Path(__file__).resolve().parents[3]
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "KrishiVaani API"
@@ -34,7 +38,11 @@ class Settings(BaseSettings):
     DATA_GOV_API_KEY: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[
+            str(_BACKEND_DIR / ".env"),
+            str(_ROOT_DIR / ".env"),
+            ".env",
+        ],
         env_file_encoding="utf-8",
         extra="ignore"
     )

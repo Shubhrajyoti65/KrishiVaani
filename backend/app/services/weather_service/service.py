@@ -11,8 +11,6 @@ from backend.app.services.weather_service.schema import (
 )
 from backend.app.core.config import settings
 
-OPENWEATHERMAP_API_KEY = settings.OPENWEATHERMAP_API_KEY
-
 class WeatherService:
     
     async def get_weather_advisory(self, query: WeatherQuery) -> WeatherAdvisoryResponse:
@@ -20,7 +18,8 @@ class WeatherService:
         if query.district and query.state:
             location_name = f"{query.district}, {query.state}"
 
-        if OPENWEATHERMAP_API_KEY:
+        api_key = settings.OPENWEATHERMAP_API_KEY
+        if api_key:
             # Try by lat/lon first (most precise)
             if query.latitude and query.longitude:
                 try:
@@ -206,7 +205,7 @@ class WeatherService:
     async def _fetch_openweather_data(self, lat: float, lon: float, location_name: str) -> WeatherAdvisoryResponse:
         async with httpx.AsyncClient(timeout=6.0) as client:
             url = (f"https://api.openweathermap.org/data/2.5/weather"
-                   f"?lat={lat}&lon={lon}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
+                   f"?lat={lat}&lon={lon}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric")
             resp = await client.get(url)
             resp.raise_for_status()
             return await self._parse_owm_response(resp.json(), location_name)
@@ -214,7 +213,7 @@ class WeatherService:
     async def _fetch_openweather_by_city(self, city: str, location_name: str) -> WeatherAdvisoryResponse:
         async with httpx.AsyncClient(timeout=6.0) as client:
             url = (f"https://api.openweathermap.org/data/2.5/weather"
-                   f"?q={city}&appid={OPENWEATHERMAP_API_KEY}&units=metric")
+                   f"?q={city}&appid={settings.OPENWEATHERMAP_API_KEY}&units=metric")
             resp = await client.get(url)
             resp.raise_for_status()
             return await self._parse_owm_response(resp.json(), location_name)
