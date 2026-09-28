@@ -2,37 +2,15 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple, Optional
-import torch
-import torch.nn as nn
 from sklearn.ensemble import RandomForestRegressor
-
+from typing import Dict, List, Tuple
 from backend.app.services.yield_prediction.schema import (
     YieldPredictionRequest,
     YieldPredictionResponse,
     RevenueEstimate,
 )
 
-PYTORCH_MODEL_PATH = os.path.join(os.path.dirname(__file__), "yield_prediction_pytorch.pt")
-RF_MODEL_PATH = os.path.join(os.path.dirname(__file__), "yield_prediction_rf.joblib")
-
-class YieldRegressionNN(nn.Module):
-    def __init__(self, input_dim):
-        super(YieldRegressionNN, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.15),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 1)
-        )
-
-    def forward(self, x):
-        return self.net(x)
+MODEL_FILE_PATH = os.path.join(os.path.dirname(__file__), "yield_prediction_rf.joblib")
 
 # Baseline Indian MSP prices (INR per Quintal) for key crops (2024-2026 reference)
 MSP_PRICES = {
@@ -41,13 +19,12 @@ MSP_PRICES = {
     "maize": 2225.0,
     "cotton": 7121.0,
     "chickpea": 5440.0,
-    "sugarcane": 315.0,
+    "sugarcane": 315.0,  # per quintal
     "pigeonpeas": 7000.0,
     "blackgram": 6950.0,
     "mungbean": 8558.0,
     "jute": 5050.0,
     "groundnut": 6783.0,
-    "mustard": 5650.0,
 }
 DEFAULT_MSP = 2500.0
 
@@ -76,6 +53,7 @@ def generate_synthetic_yield_dataset():
             rain = np.random.uniform(200, 1800)
             temp = np.random.uniform(15, 38)
             
+            # Simple synthetic yield function with penalties for deviation from optimal
             base = np.random.uniform(*prof["yield_range"])
             n_factor = 1.0 - abs(N - prof["opt_N"]) / 300.0
             rain_factor = 1.0 - abs(rain - prof["opt_rain"]) / 2500.0
@@ -88,107 +66,64 @@ def generate_synthetic_yield_dataset():
 
 class YieldPredictionEngine:
     def __init__(self):
-        self.pytorch_model = None
-        self.pytorch_meta = None
-        self.rf_model = None
-        self.rf_features = None
-        self.load_models()
+        self.model = None
+        self.load_or_train_model()
 
-    def load_models(self):
-        # 1. Try PyTorch Deep Regression Network
-        if os.path.exists(PYTORCH_MODEL_PATH):
+    def load_or_train_model(self):
+        if os.path.exists(MODEL_FILE_PATH):
             try:
-                ckpt = torch.load(PYTORCH_MODEL_PATH, map_location="cpu")
-                net = YieldRegressionNN(input_dim=len(ckpt["feature_columns"]))
-                net.load_state_dict(ckpt["model_state_dict"])
-                net.eval()
-                self.pytorch_model = net
-                self.pytorch_meta = ckpt
-            except Exception:
-                self.pytorch_model = None
-
-        # 2. Try Random Forest fallback
-        if os.path.exists(RF_MODEL_PATH):
-            try:
-                loaded = joblib.load(RF_MODEL_PATH)
-                if isinstance(loaded, tuple):
-                    self.rf_model, self.rf_features = loaded
-                else:
-                    self.rf_model = loaded
-                    df_dummy = pd.get_dummies(generate_synthetic_yield_dataset(), columns=["crop"])
-                    self.rf_features = list(df_dummy.drop(columns=["yield_per_acre"]).columns)
+                self.model = joblib.load(MODEL_FILE_PATH)
                 return
             except Exception:
                 pass
 
-        if self.rf_model is None and self.pytorch_model is None:
+        custom_csv_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "..", "data", "yield_prediction", "crop_yield.csv"
+        )
+        if os.path.exists(custom_csv_path):
+            try:
+                df = pd.read_csv(custom_csv_path)
+            except Exception:
+                df = generate_synthetic_yield_dataset()
+        else:
             df = generate_synthetic_yield_dataset()
-            df_encoded = pd.get_dummies(df, columns=["crop"])
-            X = df_encoded.drop(columns=["yield_per_acre"])
-            y = df_encoded["yield_per_acre"]
 
-            rf = RandomForestRegressor(n_estimators=100, random_state=42)
-            rf.fit(X, y)
-            self.rf_model = rf
-            self.rf_features = list(X.columns)
-            joblib.dump((rf, self.rf_features), RF_MODEL_PATH)
+        df_encoded = pd.get_dummies(df, columns=["crop"])
+        X = df_encoded.drop(columns=["yield_per_acre"])
+        y = df_encoded["yield_per_acre"]
+
+        rf = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf.fit(X, y)
+        self.model = rf
+        joblib.dump((rf, list(X.columns)), MODEL_FILE_PATH)
+
 
     def predict(self, req: YieldPredictionRequest) -> YieldPredictionResponse:
+        rf_tuple = joblib.load(MODEL_FILE_PATH) if not isinstance(self.model, tuple) else self.model
+        if isinstance(rf_tuple, tuple):
+            clf, feature_columns = rf_tuple
+        else:
+            clf = rf_tuple
+            df_dummy = pd.get_dummies(generate_synthetic_yield_dataset(), columns=["crop"])
+            feature_columns = list(df_dummy.drop(columns=["yield_per_acre"]).columns)
+
         crop_clean = req.crop.strip().lower()
-        state_clean = req.state.strip().lower()
+        
+        # Build input row matching feature_columns
+        row = {col: 0.0 for col in feature_columns}
+        row["N"] = req.nitrogen
+        row["P"] = req.phosphorus
+        row["K"] = req.potassium
+        row["rainfall"] = req.rainfall
+        row["temperature"] = req.temperature
+        
+        crop_col = f"crop_{crop_clean}"
+        if crop_col in row:
+            row[crop_col] = 1.0
 
-        predicted_yield_per_acre = None
-
-        # Predict using PyTorch model if available
-        if self.pytorch_model is not None and self.pytorch_meta is not None:
-            try:
-                feature_columns = self.pytorch_meta["feature_columns"]
-                mean = np.array(self.pytorch_meta["scaler_mean"], dtype=np.float32)
-                scale = np.array(self.pytorch_meta["scaler_scale"], dtype=np.float32)
-
-                row = {col: 0.0 for col in feature_columns}
-                row["nitrogen"] = req.nitrogen
-                row["phosphorus"] = req.phosphorus
-                row["potassium"] = req.potassium
-                row["rainfall"] = req.rainfall
-                row["temperature"] = req.temperature
-
-                crop_col = f"crop_{crop_clean}"
-                if crop_col in row:
-                    row[crop_col] = 1.0
-
-                state_col = f"state_{state_clean}"
-                if state_col in row:
-                    row[state_col] = 1.0
-
-                feats = np.array([row[c] for c in feature_columns], dtype=np.float32)
-                norm_feats = (feats - mean) / scale
-                tensor_x = torch.tensor(norm_feats, dtype=torch.float32).unsqueeze(0)
-
-                with torch.no_grad():
-                    pred_tensor = self.pytorch_model(tensor_x)
-                    predicted_yield_per_acre = float(pred_tensor.squeeze().item())
-            except Exception:
-                predicted_yield_per_acre = None
-
-        # Fallback to Random Forest
-        if predicted_yield_per_acre is None or predicted_yield_per_acre <= 0:
-            if self.rf_model is not None and self.rf_features is not None:
-                row = {col: 0.0 for col in self.rf_features}
-                row["N"] = req.nitrogen
-                row["P"] = req.phosphorus
-                row["K"] = req.potassium
-                row["rainfall"] = req.rainfall
-                row["temperature"] = req.temperature
-                crop_col = f"crop_{crop_clean}"
-                if crop_col in row:
-                    row[crop_col] = 1.0
-                input_df = pd.DataFrame([row])[self.rf_features]
-                predicted_yield_per_acre = float(self.rf_model.predict(input_df)[0])
-            else:
-                predicted_yield_per_acre = 12.5
-
-        yield_per_acre_rounded = round(max(0.5, predicted_yield_per_acre), 2)
+        input_df = pd.DataFrame([row])[feature_columns]
+        predicted_yield_per_acre = float(clf.predict(input_df)[0])
+        yield_per_acre_rounded = round(predicted_yield_per_acre, 2)
         total_yield = round(yield_per_acre_rounded * req.area_acres, 2)
 
         # Revenue estimation
