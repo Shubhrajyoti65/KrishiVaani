@@ -1,396 +1,207 @@
 import React, { useState } from 'react';
-import {
-  LineChart, TrendingUp, IndianRupee, Calculator, Loader,
-  AlertCircle, ChevronDown, Info, Sprout, Layers, Droplets, MapPin, CheckCircle
-} from 'lucide-react';
-import SearchableSelect from './SearchableSelect';
-import {
-  EXPANDED_CROPS, INDIAN_STATES, SOIL_TYPES,
-  IRRIGATION_TYPES, CROPPING_SEASONS
-} from '../data/agriData';
+import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info } from 'lucide-react';
+
+const CROPS_MSP = {
+  Rice:      { msp: 2183, season: 'Kharif', yield_range: '2.5–4.5' },
+  Wheat:     { msp: 2275, season: 'Rabi',   yield_range: '3.5–5.5' },
+  Maize:     { msp: 1962, season: 'Kharif', yield_range: '2.0–4.0' },
+  Cotton:    { msp: 6620, season: 'Kharif', yield_range: '1.5–2.5' },
+  Soybean:   { msp: 4600, season: 'Kharif', yield_range: '1.2–2.0' },
+  Groundnut: { msp: 6377, season: 'Kharif', yield_range: '1.5–2.8' },
+  Chickpea:  { msp: 5440, season: 'Rabi',   yield_range: '1.2–2.0' },
+  Mustard:   { msp: 5650, season: 'Rabi',   yield_range: '1.2–2.5' },
+  Sugarcane: { msp: 340,  season: 'Annual', yield_range: '60–80' },
+  Potato:    { msp: 1200, season: 'Rabi',   yield_range: '15–25' },
+};
+
+const DEFAULT_FORM = { crop: 'Wheat', area: 2, soil_quality: 'medium', irrigation: 'Canal', state: 'Punjab' };
+const STATES = ['Punjab', 'Haryana', 'Uttar Pradesh', 'Bihar', 'Maharashtra', 'Rajasthan', 'Madhya Pradesh', 'Karnataka', 'Gujarat', 'West Bengal'];
+const IRRIGATION = ['Canal', 'Drip', 'Sprinkler', 'Rain-fed', 'Borewell'];
 
 export default function YieldCalculator() {
-  const [selectedCrop, setSelectedCrop] = useState(null);
-  const [selectedState, setSelectedState] = useState('');
-  const [selectedSeason, setSelectedSeason] = useState('');
-  const [selectedSoil, setSelectedSoil] = useState('');
-  const [selectedIrrigation, setSelectedIrrigation] = useState('');
-  const [areaAcres, setAreaAcres] = useState('');
-
-  // Advanced Agronomic Inputs (empty by default)
-  const [nitrogen, setNitrogen] = useState('');
-  const [phosphorus, setPhosphorus] = useState('');
-  const [potassium, setPotassium] = useState('');
-  const [rainfall, setRainfall] = useState('');
-  const [temperature, setTemperature] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const [result, setResult] = useState(null);
+  const [form,    setForm]    = useState(DEFAULT_FORM);
+  const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error,   setError]   = useState(null);
 
-  const handleCropChange = (val, opt) => {
-    if (opt) {
-      setSelectedCrop(opt);
-      if (opt.season && !selectedSeason) {
-        const matchingSeason = opt.season.includes('Rabi') ? 'Rabi' : opt.season.includes('Kharif') ? 'Kharif' : 'Annual';
-        setSelectedSeason(matchingSeason);
-      }
-    } else if (val) {
-      const match = EXPANDED_CROPS.find(c => c.id === val || c.name.toLowerCase() === val.toLowerCase());
-      if (match) {
-        setSelectedCrop(match);
-      } else {
-        setSelectedCrop({ id: val.toLowerCase().replace(/\s+/g, '_'), name: val, msp: 2200, category: 'Custom' });
-      }
-    } else {
-      setSelectedCrop(null);
-    }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: isNaN(value) || value === '' ? value : Number(value) }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCrop) {
-      alert("Please select or type a crop name first.");
-      return;
-    }
-    if (!selectedState) {
-      alert("Please select your state.");
-      return;
-    }
-    if (!areaAcres || Number(areaAcres) <= 0) {
-      alert("Please enter a valid land area in acres.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    const cropId = selectedCrop.id || 'wheat';
-    const payload = {
-      crop: cropId,
-      state: selectedState,
-      season: selectedSeason || 'Kharif',
-      area_acres: Number(areaAcres),
-      nitrogen: Number(nitrogen) || 90,
-      phosphorus: Number(phosphorus) || 45,
-      potassium: Number(potassium) || 40,
-      rainfall: Number(rainfall) || 600,
-      temperature: Number(temperature) || 25,
-    };
-
+    setLoading(true); setError(null); setResult(null);
     try {
       const res = await fetch('http://localhost:8000/api/v1/yield-prediction/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(form),
       });
-
-      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-      const data = await res.json();
-      setResult(data);
+      if (!res.ok) throw new Error(`Server: ${res.status}`);
+      setResult(await res.json());
     } catch (err) {
-      // Local fallback using accurate MSP agronomic data
-      const msp = selectedCrop.msp || 2275;
-      const baseYieldPerAcre = cropId === 'sugarcane' ? 380 : cropId === 'potato' ? 140 : cropId === 'banana' ? 220 : cropId === 'rice' ? 20 : cropId === 'wheat' ? 22 : 14;
-      const irrigBonus = selectedIrrigation === 'Drip' ? 1.25 : selectedIrrigation === 'Sprinkler' ? 1.15 : 1.0;
-      const finalYieldPerAcre = +(baseYieldPerAcre * irrigBonus).toFixed(1);
-      const totalQuintals = +(finalYieldPerAcre * Number(areaAcres)).toFixed(1);
-      const minRev = Math.round(totalQuintals * msp * 0.95);
-      const maxRev = Math.round(totalQuintals * msp * 1.08);
-
+      // Local fallback calculation
+      const cropInfo = CROPS_MSP[form.crop] || { msp: 2000, yield_range: '2–3' };
+      const baseYield = form.soil_quality === 'high' ? 4.2 : form.soil_quality === 'medium' ? 3.1 : 2.0;
+      const irrigBonus = form.irrigation === 'Drip' ? 0.4 : form.irrigation === 'Sprinkler' ? 0.3 : form.irrigation === 'Canal' ? 0.2 : 0;
+      const yieldQ = (baseYield + irrigBonus) * form.area;
+      const revenue = yieldQ * cropInfo.msp;
       setResult({
-        crop: selectedCrop.name,
-        season: selectedSeason || 'Kharif',
-        area_acres: Number(areaAcres),
-        predicted_yield_per_acre_quintals: finalYieldPerAcre,
-        total_expected_yield_quintals: totalQuintals,
-        revenue_estimate: {
-          estimated_msp_per_quintal_inr: msp,
-          min_total_revenue_inr: minRev,
-          max_total_revenue_inr: maxRev,
-        },
-        risk_assessment: [
-          'Low Risk: Nitrogen and Potassium levels are within optimal range for target crop.',
-          `Irrigation method (${selectedIrrigation || 'Standard'}) provides sufficient moisture security.`
-        ],
-        yield_optimization_tips: [
-          'Split nitrogen application: Apply 50% as basal dose and 50% at tillering / flowering stage.',
-          'Consider soil micronutrient test (Zinc & Boron) before sowing to maximize grain filling.'
-        ]
+        estimated_yield_quintals: yieldQ.toFixed(1),
+        msp_price_per_quintal: cropInfo.msp,
+        estimated_revenue_inr: revenue,
+        net_profit_inr: revenue * 0.62,
+        season: cropInfo.season,
+        crop: form.crop,
+        area: form.area,
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const cropInfo = CROPS_MSP[form.crop];
+
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <span className="section-label">Revenue & MSP Estimator</span>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Harvest Yield & MSP Revenue Forecast</h2>
+        <span className="section-label">Revenue Calculator</span>
+        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Yield & MSP Revenue Forecast</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Search any of 30+ Indian crops, states, and soil types to predict your harvest in quintals and calculate expected gross revenue at Government of India MSP support prices.
+          Estimate your harvest in quintals and calculate expected revenue at government MSP prices.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,420px)', gap: '2rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,400px)', gap: '2rem', alignItems: 'start' }}>
         {/* Form */}
         <div className="card">
-          <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.15rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sprout size={20} color="var(--green-primary)" />
-            Farm & Crop Parameters
-          </h3>
-
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.5rem' }}>Farm Details</h3>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              {/* Searchable Crop Selector */}
-              <div>
-                <label className="form-label" style={{ fontWeight: 600 }}>Crop Name (Search 30+ Crops) *</label>
-                <SearchableSelect
-                  options={EXPANDED_CROPS}
-                  value={selectedCrop?.id || ''}
-                  onChange={handleCropChange}
-                  placeholder="Select or type crop..."
-                  searchPlaceholder="Search wheat, rice, cotton, mustard, sugarcane..."
-                  allowCustom={true}
-                  customActionLabel="Calculate for custom crop"
-                />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Crop</label>
+                <select className="form-select" name="crop" value={form.crop} onChange={handleChange}>
+                  {Object.keys(CROPS_MSP).map(c => <option key={c}>{c}</option>)}
+                </select>
               </div>
-
-              {/* Land Area */}
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 600 }}>Land Area (Acres) *</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  value={areaAcres}
-                  onChange={e => setAreaAcres(e.target.value)}
-                  placeholder="e.g. 2.5"
-                  min={0.1}
-                  max={500}
-                  step={0.1}
-                  required
-                />
+              <div className="form-group">
+                <label className="form-label">Area (Acres)</label>
+                <input className="form-input" type="number" name="area" value={form.area} onChange={handleChange} min={0.1} max={500} step={0.1} />
               </div>
-
-              {/* Searchable State Selector */}
-              <div>
-                <label className="form-label" style={{ fontWeight: 600 }}>State (Search 36 States/UTs) *</label>
-                <SearchableSelect
-                  options={INDIAN_STATES}
-                  value={selectedState}
-                  onChange={val => setSelectedState(val)}
-                  placeholder="Select state..."
-                  searchPlaceholder="Search state (e.g. Punjab, Odisha, Maharashtra)..."
-                  icon={MapPin}
-                />
+              <div className="form-group">
+                <label className="form-label">Soil Quality</label>
+                <select className="form-select" name="soil_quality" value={form.soil_quality} onChange={handleChange}>
+                  <option value="high">High Fertility</option>
+                  <option value="medium">Medium Fertility</option>
+                  <option value="low">Low Fertility</option>
+                </select>
               </div>
-
-              {/* Searchable Season Selector */}
-              <div>
-                <label className="form-label" style={{ fontWeight: 600 }}>Cropping Season</label>
-                <SearchableSelect
-                  options={CROPPING_SEASONS.map(s => ({ value: s.id, label: s.name, subtext: s.months }))}
-                  value={selectedSeason}
-                  onChange={val => setSelectedSeason(val)}
-                  placeholder="Select season..."
-                  searchPlaceholder="Search Kharif, Rabi, Zaid..."
-                />
+              <div className="form-group">
+                <label className="form-label">Irrigation Type</label>
+                <select className="form-select" name="irrigation" value={form.irrigation} onChange={handleChange}>
+                  {IRRIGATION.map(i => <option key={i}>{i}</option>)}
+                </select>
               </div>
-
-              {/* Searchable Soil Type */}
-              <div>
-                <label className="form-label" style={{ fontWeight: 600 }}>Soil Type</label>
-                <SearchableSelect
-                  options={SOIL_TYPES.map(s => ({ value: s.id, label: s.name, subtext: s.description }))}
-                  value={selectedSoil}
-                  onChange={val => setSelectedSoil(val)}
-                  placeholder="Select soil..."
-                  searchPlaceholder="Search alluvial, black cotton, red..."
-                  icon={Layers}
-                />
-              </div>
-
-              {/* Searchable Irrigation Type */}
-              <div>
-                <label className="form-label" style={{ fontWeight: 600 }}>Irrigation Method</label>
-                <SearchableSelect
-                  options={IRRIGATION_TYPES.map(i => ({ value: i.id, label: i.name, subtext: i.description }))}
-                  value={selectedIrrigation}
-                  onChange={val => setSelectedIrrigation(val)}
-                  placeholder="Select irrigation..."
-                  searchPlaceholder="Search drip, canal, sprinkler, borewell..."
-                  icon={Droplets}
-                />
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">State</label>
+                <select className="form-select" name="state" value={form.state} onChange={handleChange}>
+                  {STATES.map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
             </div>
 
-            {/* Quick Crop Info Strip (only when crop is selected) */}
-            {selectedCrop && (
-              <div style={{ background: 'var(--bg-section)', padding: '0.65rem 1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>{selectedCrop.icon || '🌱'}</span>
-                  <strong>{selectedCrop.name}</strong>
-                  <span className="badge" style={{ fontSize: '0.7rem' }}>{selectedCrop.category || 'Agri'}</span>
-                </div>
-                <div style={{ color: 'var(--green-primary)', fontWeight: 700 }}>
-                  Govt MSP: ₹{selectedCrop.msp?.toLocaleString('en-IN') || '2,275'}/quintal
+            {/* MSP hint */}
+            {cropInfo && (
+              <div style={{ background: 'var(--gold-pale)', border: '1px solid #e8d080', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '1rem', display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                <Info size={16} color="#9a6e0a" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ fontSize: '0.82rem', color: '#7a5010' }}>
+                  <strong>{form.crop}</strong> ({cropInfo.season}) · Govt MSP: <strong>₹{cropInfo.msp.toLocaleString('en-IN')}/quintal</strong> · Typical yield: <strong>{cropInfo.yield_range} q/acre</strong>
                 </div>
               </div>
             )}
 
-            {/* Toggle Advanced Soil NPK & Weather Inputs */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(p => !p)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--green-primary)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  padding: 0
-                }}
-              >
-                <ChevronDown size={16} style={{ transform: showAdvanced ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                {showAdvanced ? 'Hide Optional Soil NPK & Climate Inputs' : 'Adjust Optional Soil NPK & Rainfall Inputs (+)'}
-              </button>
-
-              {showAdvanced && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.85rem', padding: '1rem', background: 'var(--bg-section)', borderRadius: 'var(--radius-sm)' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Nitrogen (kg/ha)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 90" value={nitrogen} onChange={e => setNitrogen(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Phosphorus (kg/ha)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 45" value={phosphorus} onChange={e => setPhosphorus(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Potassium (kg/ha)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 40" value={potassium} onChange={e => setPotassium(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Rainfall (mm)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 650" value={rainfall} onChange={e => setRainfall(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Temperature (°C)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 25" value={temperature} onChange={e => setTemperature(e.target.value)} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader size={17} style={{ animation: 'spin 1s linear infinite' }} />
-                  Calculating Yield & MSP Revenue...
-                </>
-              ) : (
-                <>
-                  <Calculator size={17} />
-                  Calculate Yield & Revenue
-                </>
-              )}
+            <button className="btn btn-primary" type="submit" style={{ width: '100%', padding: '0.9rem' }} disabled={loading}>
+              {loading
+                ? <><Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> Calculating...</>
+                : <><Calculator size={18} /> Calculate Yield & Revenue</>}
             </button>
           </form>
         </div>
 
-        {/* Results Panel */}
+        {/* Results */}
         <div>
-          {result ? (
+          {!result && !loading && (
+            <div className="card" style={{ textAlign: 'center', padding: '2.5rem', background: 'var(--gold-pale)', border: '1px solid #e8d080' }}>
+              <div style={{ width: 64, height: 64, background: 'rgba(212,166,42,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <IndianRupee size={30} color="var(--gold)" />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.5rem' }}>Revenue Estimator</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Enter your farm details and click Calculate to get harvest yield and expected income at government MSP rates.</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="card" style={{ textAlign: 'center', padding: '2.5rem' }}>
+              <Loader size={40} color="var(--gold)" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
+              <p style={{ color: 'var(--text-muted)' }}>Calculating yield estimate…</p>
+            </div>
+          )}
+
+          {result && (
             <div className="animate-fade-in-up">
-              {/* Gross Revenue Card */}
-              <div
-                className="card"
-                style={{
-                  background: 'var(--gradient-hero)',
-                  color: 'white',
-                  marginBottom: '1.25rem',
-                  border: 'none',
-                  padding: '1.75rem',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  ESTIMATED GROSS REVENUE (MSP)
+              {/* Main revenue card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #c8960a 0%, #e8b820 100%)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '2rem',
+                color: '#fff',
+                marginBottom: '1rem',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                <div style={{ fontSize: '0.82rem', opacity: 0.75, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Estimated Revenue (MSP)
                 </div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: 800, margin: '0.4rem 0', color: '#ffffff', lineHeight: 1.1 }}>
-                  ₹{result.revenue_estimate?.min_total_revenue_inr?.toLocaleString('en-IN')} – ₹{result.revenue_estimate?.max_total_revenue_inr?.toLocaleString('en-IN')}
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.8rem', fontWeight: 800, lineHeight: 1 }}>
+                  ₹{Number(result.estimated_revenue_inr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <IndianRupee size={15} />
-                  Based on ₹{result.revenue_estimate?.estimated_msp_per_quintal_inr}/quintal Government MSP
+                <div style={{ fontSize: '0.9rem', opacity: 0.85, marginTop: '0.35rem' }}>
+                  Net Profit (est.): ₹{Number(result.net_profit_inr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </div>
               </div>
 
-              {/* Yield Breakdown */}
-              <div className="card" style={{ marginBottom: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="stat-block" style={{ textAlign: 'left', padding: '1rem' }}>
-                    <div className="stat-number" style={{ fontSize: '1.8rem', color: 'var(--green-primary)' }}>
-                      {result.predicted_yield_per_acre_quintals}
-                    </div>
-                    <div className="stat-label">Yield per Acre (Quintals)</div>
+              {/* Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                {[
+                  { label: 'Yield (Quintals)', value: `${result.estimated_yield_quintals} q`, color: 'var(--green-primary)' },
+                  { label: 'MSP per Quintal', value: `₹${Number(result.msp_price_per_quintal).toLocaleString('en-IN')}`, color: 'var(--gold)' },
+                  { label: 'Crop', value: result.crop, color: 'var(--brown)' },
+                  { label: 'Season', value: result.season, color: '#7c3aed' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="card" style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 700, color }}>{value}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{label}</div>
                   </div>
-
-                  <div className="stat-block" style={{ textAlign: 'left', padding: '1rem' }}>
-                    <div className="stat-number" style={{ fontSize: '1.8rem', color: 'var(--gold)' }}>
-                      {result.total_expected_yield_quintals}
-                    </div>
-                    <div className="stat-label">Total Harvest ({result.area_acres} Acres)</div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  <span>Crop: <strong>{result.crop}</strong></span>
-                  <span>Season: <strong>{result.season}</strong></span>
-                  <span>State: <strong>{selectedState}</strong></span>
-                </div>
+                ))}
               </div>
 
-              {/* Risk & Optimization Tips */}
-              <div className="card" style={{ background: 'var(--bg-section)' }}>
-                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '0.92rem' }}>
-                  💡 Agronomic Optimization Advice
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {(result.yield_optimization_tips || []).map((tip, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      <CheckCircle size={14} color="var(--green-primary)" style={{ flexShrink: 0, marginTop: '3px' }} />
-                      <span>{tip}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="card card-cream" style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <Info size={14} color="var(--gold)" style={{ flexShrink: 0, marginTop: '1px' }} />
+                Revenue based on Government of India MSP 2024–25. Actual market prices may vary. Net profit assumes ~38% input costs.
               </div>
             </div>
-          ) : (
-            <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'var(--bg-section)' }}>
-              <Calculator size={48} color="var(--green-pale)" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                Enter Farm Details
-              </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                Select your crop, land acreage, state, and soil above to generate instant yield and financial MSP revenue estimates.
-              </p>
+          )}
+
+          {error && (
+            <div className="card" style={{ border: '1.5px solid #f0b8a8', background: '#fde8e3', color: '#c04a30', fontSize: '0.875rem', padding: '1rem' }}>
+              <AlertCircle size={18} style={{ marginRight: '0.5rem' }} /> {error}
             </div>
           )}
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
