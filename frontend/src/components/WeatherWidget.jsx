@@ -165,15 +165,16 @@ export default function WeatherWidget({ compact = false }) {
       <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
         <div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: '180px' }}>
+            <div style={{ flex: 1, minWidth: '180px', position: 'relative', zIndex: 50 }}>
               <SearchableSelect
                 options={MAJOR_DISTRICTS_AND_CITIES}
                 value={cityName}
                 onChange={handleCitySelect}
                 placeholder="Search city or district..."
-                searchPlaceholder="Search 50+ Indian districts..."
+                searchPlaceholder="Type any Indian district, town or village..."
                 compact={true}
                 allowCustom={true}
+                isLocationSearch={true}
                 customActionLabel="Search live weather for"
                 icon={MapPin}
               />
@@ -262,8 +263,8 @@ export default function WeatherWidget({ compact = false }) {
         </p>
       </div>
 
-      {/* Search Header Bar */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
+      {/* Search Header Bar with High Stacking Context to prevent card overlap */}
+      <div className="card" style={{ marginBottom: '2rem', position: 'relative', zIndex: 50 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: '1rem', alignItems: 'center' }}>
           <div>
             <label className="form-label" style={{ marginBottom: '0.35rem', fontWeight: 600 }}>
@@ -273,9 +274,10 @@ export default function WeatherWidget({ compact = false }) {
               options={MAJOR_DISTRICTS_AND_CITIES}
               value={cityName}
               onChange={handleCitySelect}
-              placeholder="Type city or district (e.g. Cuttack, Ludhiana, Nashik, Guntur, Varanasi)..."
-              searchPlaceholder="Search 50+ Indian agricultural districts or type custom..."
+              placeholder="Type any Indian district or town (e.g. Bhadrak, Cuttack, Nashik, Guntur, Varanasi)..."
+              searchPlaceholder="Type any Indian town, city, or district (e.g. Bhadrak)..."
               allowCustom={true}
+              isLocationSearch={true}
               customActionLabel="Fetch live weather for"
               icon={MapPin}
             />
@@ -310,7 +312,7 @@ export default function WeatherWidget({ compact = false }) {
 
       {/* Live Weather Cards & Forecast */}
       {current ? (
-        <div className="animate-fade-in-up">
+        <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
           {/* Main Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="card" style={{ background: 'var(--gradient-card)', border: '1.5px solid var(--green-pale)', padding: '1.5rem' }}>
