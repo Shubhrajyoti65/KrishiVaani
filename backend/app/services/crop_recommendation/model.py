@@ -2,15 +2,39 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
+from typing import Dict, Any, Tuple, List, Optional
+import torch
+import torch.nn as nn
 from sklearn.ensemble import RandomForestClassifier
-from typing import Dict, Any, Tuple, List
+
 from backend.app.services.crop_recommendation.schema import (
     CropRecommendationRequest,
     CropRecommendationResponse,
     CropConfidence,
 )
 
-MODEL_FILE_PATH = os.path.join(os.path.dirname(__file__), "crop_recommendation_rf.joblib")
+PYTORCH_MODEL_PATH = os.path.join(os.path.dirname(__file__), "crop_recommendation_pytorch.pt")
+RF_MODEL_PATH = os.path.join(os.path.dirname(__file__), "crop_recommendation_rf.joblib")
+
+class CropRecommendationNN(nn.Module):
+    def __init__(self, input_dim=7, num_classes=22):
+        super(CropRecommendationNN, self).__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, num_classes)
+        )
+
+    def forward(self, x):
+        return self.net(x)
 
 # Synthetic baseline dataset generator for standard Indian crops based on agronomic thresholds
 def generate_synthetic_agri_dataset():
@@ -56,43 +80,50 @@ def generate_synthetic_agri_dataset():
     df = pd.DataFrame(data, columns=["N", "P", "K", "temperature", "humidity", "ph", "rainfall", "label"])
     return df
 
-
 class CropRecommendationEngine:
     def __init__(self):
-        self.model = None
-        self.load_or_train_model()
+        self.pytorch_model = None
+        self.pytorch_meta = None
+        self.rf_model = None
+        self.load_models()
 
-    def load_or_train_model(self):
-        if os.path.exists(MODEL_FILE_PATH):
+    def load_models(self):
+        # 1. Try loading PyTorch Deep Neural Network
+        if os.path.exists(PYTORCH_MODEL_PATH):
             try:
-                self.model = joblib.load(MODEL_FILE_PATH)
-                return
+                ckpt = torch.load(PYTORCH_MODEL_PATH, map_location="cpu")
+                classes = ckpt["classes"]
+                model = CropRecommendationNN(input_dim=len(ckpt["feature_columns"]), num_classes=len(classes))
+                model.load_state_dict(ckpt["model_state_dict"])
+                model.eval()
+                self.pytorch_model = model
+                self.pytorch_meta = ckpt
+            except Exception:
+                self.pytorch_model = None
+
+        # 2. Try loading Random Forest backup
+        if os.path.exists(RF_MODEL_PATH):
+            try:
+                loaded = joblib.load(RF_MODEL_PATH)
+                if isinstance(loaded, tuple):
+                    self.rf_model = loaded[0]
+                else:
+                    self.rf_model = loaded
             except Exception:
                 pass
-        
-        custom_csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "data", "crop_recommendation", "Crop_recommendation.csv"
-        )
-        if os.path.exists(custom_csv_path):
-            try:
-                df = pd.read_csv(custom_csv_path)
-            except Exception:
-                df = generate_synthetic_agri_dataset()
-        else:
+
+        if self.rf_model is None and self.pytorch_model is None:
+            # Generate baseline dataset
             df = generate_synthetic_agri_dataset()
-
-        X = df[["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]]
-        y = df["label"]
-        
-        clf = RandomForestClassifier(n_estimators=100, random_state=42)
-        clf.fit(X, y)
-        self.model = clf
-        joblib.dump(clf, MODEL_FILE_PATH)
-
+            X = df[["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]]
+            y = df["label"]
+            clf = RandomForestClassifier(n_estimators=100, random_state=42)
+            clf.fit(X, y)
+            self.rf_model = clf
+            joblib.dump(clf, RF_MODEL_PATH)
 
     def assess_soil_health(self, N: float, P: float, K: float, ph: float) -> Dict[str, str]:
         assessment = {}
-        # Nitrogen assessment
         if N < 50:
             assessment["Nitrogen"] = "Low - Nitrogen deficient. Consider applying urea or organic compost."
         elif N <= 100:
@@ -100,7 +131,6 @@ class CropRecommendationEngine:
         else:
             assessment["Nitrogen"] = "High - Abundant nitrogen. Limit extra nitrogenous fertilizers."
 
-        # Phosphorus assessment
         if P < 30:
             assessment["Phosphorus"] = "Low - Phosphorus deficient. Apply DAP or Single Super Phosphate (SSP)."
         elif P <= 80:
@@ -108,7 +138,6 @@ class CropRecommendationEngine:
         else:
             assessment["Phosphorus"] = "High - Elevated phosphorus levels."
 
-        # Potassium assessment
         if K < 30:
             assessment["Potassium"] = "Low - Potassium deficient. Apply Muriate of Potash (MOP)."
         elif K <= 80:
@@ -116,7 +145,6 @@ class CropRecommendationEngine:
         else:
             assessment["Potassium"] = "High - High potassium concentration."
 
-        # pH assessment
         if ph < 5.5:
             assessment["pH"] = "Acidic - Soil is acidic. Lime (calcium carbonate) application recommended."
         elif ph <= 7.5:
@@ -128,41 +156,52 @@ class CropRecommendationEngine:
 
     def generate_advisory(self, crop: str, req: CropRecommendationRequest) -> List[str]:
         notes = [f"Recommended crop '{crop.capitalize()}' is well suited for your local soil & climate profile."]
-        
         if req.rainfall < 70 and crop in ["rice", "jute", "papaya"]:
             notes.append("Note: This crop requires high moisture. Ensure supplemental irrigation is available.")
         if req.ph < 6.0:
             notes.append("Consider applying agricultural lime to elevate soil pH towards neutral range.")
         if req.nitrogen < 40:
             notes.append("Incorporate leguminous cover crops or bio-fertilizers to enhance soil organic nitrogen.")
-
         return notes
 
     def predict(self, req: CropRecommendationRequest) -> CropRecommendationResponse:
-        input_features = pd.DataFrame([{
-            "N": req.nitrogen,
-            "P": req.phosphorus,
-            "K": req.potassium,
-            "temperature": req.temperature,
-            "humidity": req.humidity,
-            "ph": req.ph,
-            "rainfall": req.rainfall
-        }])
+        features_list = [req.nitrogen, req.phosphorus, req.potassium, req.temperature, req.humidity, req.ph, req.rainfall]
 
-        probs = self.model.predict_proba(input_features)[0]
+        # Use PyTorch model if loaded
+        if self.pytorch_model is not None and self.pytorch_meta is not None:
+            mean = np.array(self.pytorch_meta["scaler_mean"], dtype=np.float32)
+            scale = np.array(self.pytorch_meta["scaler_scale"], dtype=np.float32)
+            classes = self.pytorch_meta["classes"]
 
-        classes = self.model.classes_
+            norm_feats = (np.array(features_list, dtype=np.float32) - mean) / scale
+            tensor_x = torch.tensor(norm_feats, dtype=torch.float32).unsqueeze(0)
 
-        # Sort by confidence
-        sorted_indices = np.argsort(probs)[::-1]
-        top_recommendations = [
-            CropConfidence(crop=classes[i], confidence=round(float(probs[i]), 4))
-            for i in sorted_indices[:3]
-        ]
+            with torch.no_grad():
+                logits = self.pytorch_model(tensor_x)
+                probs = torch.softmax(logits, dim=1).squeeze(0).numpy()
+
+            sorted_indices = np.argsort(probs)[::-1]
+            top_recommendations = [
+                CropConfidence(crop=classes[i], confidence=round(float(probs[i]), 4))
+                for i in sorted_indices[:3]
+            ]
+        else:
+            # Fallback to Random Forest
+            input_df = pd.DataFrame([{
+                "N": req.nitrogen, "P": req.phosphorus, "K": req.potassium,
+                "temperature": req.temperature, "humidity": req.humidity,
+                "ph": req.ph, "rainfall": req.rainfall
+            }])
+            probs = self.rf_model.predict_proba(input_df)[0]
+            classes = self.rf_model.classes_
+            sorted_indices = np.argsort(probs)[::-1]
+            top_recommendations = [
+                CropConfidence(crop=classes[i], confidence=round(float(probs[i]), 4))
+                for i in sorted_indices[:3]
+            ]
 
         primary_crop = top_recommendations[0].crop
         primary_confidence = top_recommendations[0].confidence
-
         soil_assessment = self.assess_soil_health(req.nitrogen, req.phosphorus, req.potassium, req.ph)
         advisory = self.generate_advisory(primary_crop, req)
 
