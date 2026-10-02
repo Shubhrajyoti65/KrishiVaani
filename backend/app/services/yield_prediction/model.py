@@ -99,30 +99,52 @@ class YieldPredictionEngine:
 
 
     def predict(self, req: YieldPredictionRequest) -> YieldPredictionResponse:
-        rf_tuple = joblib.load(MODEL_FILE_PATH) if not isinstance(self.model, tuple) else self.model
-        if isinstance(rf_tuple, tuple):
-            clf, feature_columns = rf_tuple
+        loaded = joblib.load(MODEL_FILE_PATH) if not isinstance(self.model, (tuple, dict)) else self.model
+        crop_clean = req.crop.strip().lower()
+
+        if isinstance(loaded, dict) and "pipeline" in loaded:
+            pipeline = loaded["pipeline"]
+            area_ha = max(0.1, float(req.area_acres) / 2.47105)
+            input_df = pd.DataFrame([{
+                "Crop": req.crop.strip().title(),
+                "State_Name": (req.state or "Punjab").strip().title(),
+                "Season": (req.season or "Kharif").strip().title(),
+                "Area": area_ha
+            }])
+            try:
+                pred_tonnes_ha = float(pipeline.predict(input_df)[0])
+                predicted_yield_per_acre = max(1.0, round(pred_tonnes_ha * 4.04686, 2))
+            except Exception:
+                predicted_yield_per_acre = 15.0
+        elif isinstance(loaded, tuple):
+            clf, feature_columns = loaded
+            row = {col: 0.0 for col in feature_columns}
+            row["N"] = req.nitrogen
+            row["P"] = req.phosphorus
+            row["K"] = req.potassium
+            row["rainfall"] = req.rainfall
+            row["temperature"] = req.temperature
+            crop_col = f"crop_{crop_clean}"
+            if crop_col in row:
+                row[crop_col] = 1.0
+            input_df = pd.DataFrame([row])[feature_columns]
+            predicted_yield_per_acre = float(clf.predict(input_df)[0])
         else:
-            clf = rf_tuple
+            clf = loaded
             df_dummy = pd.get_dummies(generate_synthetic_yield_dataset(), columns=["crop"])
             feature_columns = list(df_dummy.drop(columns=["yield_per_acre"]).columns)
+            row = {col: 0.0 for col in feature_columns}
+            row["N"] = req.nitrogen
+            row["P"] = req.phosphorus
+            row["K"] = req.potassium
+            row["rainfall"] = req.rainfall
+            row["temperature"] = req.temperature
+            crop_col = f"crop_{crop_clean}"
+            if crop_col in row:
+                row[crop_col] = 1.0
+            input_df = pd.DataFrame([row])[feature_columns]
+            predicted_yield_per_acre = float(clf.predict(input_df)[0])
 
-        crop_clean = req.crop.strip().lower()
-        
-        # Build input row matching feature_columns
-        row = {col: 0.0 for col in feature_columns}
-        row["N"] = req.nitrogen
-        row["P"] = req.phosphorus
-        row["K"] = req.potassium
-        row["rainfall"] = req.rainfall
-        row["temperature"] = req.temperature
-        
-        crop_col = f"crop_{crop_clean}"
-        if crop_col in row:
-            row[crop_col] = 1.0
-
-        input_df = pd.DataFrame([row])[feature_columns]
-        predicted_yield_per_acre = float(clf.predict(input_df)[0])
         yield_per_acre_rounded = round(predicted_yield_per_acre, 2)
         total_yield = round(yield_per_acre_rounded * req.area_acres, 2)
 
@@ -157,6 +179,11 @@ class YieldPredictionEngine:
         
         tips.append("Monitor localized weather alerts weekly to adjust fertigation schedules.")
 
+        # Convert to tonnes per hectare (1 tonne/ha ≈ 4.04686 quintals/acre)
+        yield_tonnes_ha = round(yield_per_acre_rounded / 4.04686, 2)
+        min_tonnes = max(0.1, round(yield_tonnes_ha * 0.88, 2))
+        max_tonnes = round(yield_tonnes_ha * 1.14, 2)
+
         return YieldPredictionResponse(
             crop=req.crop,
             season=req.season,
@@ -165,7 +192,11 @@ class YieldPredictionEngine:
             total_expected_yield_quintals=total_yield,
             revenue_estimate=revenue_est,
             risk_assessment=risks,
-            yield_optimization_tips=tips
+            yield_optimization_tips=tips,
+            estimated_yield=yield_tonnes_ha,
+            unit="tonnes/hectare",
+            estimated_range={"min": min_tonnes, "max": max_tonnes},
+            predicted_yield_tonnes_per_hectare=yield_tonnes_ha
         )
 
 yield_engine = YieldPredictionEngine()

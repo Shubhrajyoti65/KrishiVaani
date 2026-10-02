@@ -8,6 +8,8 @@ from backend.app.services.farmer_profile.schema import (
     FarmerProfileResponse,
     SoilTestRecordCreate,
     SoilTestRecordResponse,
+    FarmHistoryRecordCreate,
+    FarmHistoryRecordResponse,
 )
 
 # In-memory storage for test/standalone execution when MongoDB is not connected
@@ -122,8 +124,51 @@ class FarmerRepository:
             return [SoilTestRecordResponse(**doc) for doc in docs]
         else:
             docs = _in_memory_soil_tests.get(farmer_id, [])
-            # Sort descending by recorded_at
             docs_sorted = sorted(docs, key=lambda x: x["recorded_at"], reverse=True)
             return [SoilTestRecordResponse(**doc) for doc in docs_sorted]
+
+    async def add_farm_history_record(self, farmer_id: str, rec_in: FarmHistoryRecordCreate) -> FarmHistoryRecordResponse:
+        rec_id = f"fh_{uuid.uuid4().hex[:12]}"
+        now_str = datetime.utcnow().isoformat()
+        yield_per_acre = round(rec_in.yield_obtained_quintals / max(0.1, rec_in.area_acres), 2)
+
+        doc = {
+            "id": rec_id,
+            "farmer_id": farmer_id,
+            "year": rec_in.year,
+            "season": rec_in.season,
+            "crop": rec_in.crop,
+            "area_acres": rec_in.area_acres,
+            "yield_obtained_quintals": rec_in.yield_obtained_quintals,
+            "yield_per_acre_quintals": yield_per_acre,
+            "production_cost_inr": rec_in.production_cost_inr,
+            "revenue_inr": rec_in.revenue_inr,
+            "disease_experienced": rec_in.disease_experienced,
+            "soil_condition_note": rec_in.soil_condition_note,
+            "recorded_at": now_str
+        }
+
+        if db_manager.is_connected:
+            await db_manager.db["farm_history"].insert_one(doc)
+        else:
+            if not hasattr(self, "_in_memory_history"):
+                self._in_memory_history = {}
+            if farmer_id not in self._in_memory_history:
+                self._in_memory_history[farmer_id] = []
+            self._in_memory_history[farmer_id].append(doc)
+
+        return FarmHistoryRecordResponse(**doc)
+
+    async def get_farm_history(self, farmer_id: str) -> List[FarmHistoryRecordResponse]:
+        if db_manager.is_connected:
+            cursor = db_manager.db["farm_history"].find({"farmer_id": farmer_id}).sort("year", -1)
+            docs = await cursor.to_list(length=100)
+            return [FarmHistoryRecordResponse(**doc) for doc in docs]
+        else:
+            if not hasattr(self, "_in_memory_history"):
+                self._in_memory_history = {}
+            docs = self._in_memory_history.get(farmer_id, [])
+            docs_sorted = sorted(docs, key=lambda x: (x["year"], x["recorded_at"]), reverse=True)
+            return [FarmHistoryRecordResponse(**doc) for doc in docs_sorted]
 
 farmer_repository = FarmerRepository()

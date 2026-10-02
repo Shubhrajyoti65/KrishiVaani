@@ -45,3 +45,15 @@ async def get_current_weather(
         longitude=lon
     )
     return await weather_service.get_weather_advisory(query)
+
+@router.get(
+    "/{location}",
+    response_model=WeatherAdvisoryResponse,
+    summary="Get weather advisory by location string"
+)
+async def get_weather_by_location(location: str) -> WeatherAdvisoryResponse:
+    parts = [p.strip() for p in location.split(",") if p.strip()]
+    dist = parts[0] if len(parts) > 0 else "Delhi"
+    st = parts[1] if len(parts) > 1 else None
+    query = WeatherQuery(district=dist, state=st)
+    return await weather_service.get_weather_advisory(query)

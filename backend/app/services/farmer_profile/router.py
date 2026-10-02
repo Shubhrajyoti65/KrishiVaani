@@ -6,6 +6,9 @@ from backend.app.services.farmer_profile.schema import (
     FarmerProfileResponse,
     SoilTestRecordCreate,
     SoilTestRecordResponse,
+    FarmHistoryRecordCreate,
+    FarmHistoryRecordResponse,
+    FullFarmHistoryResponse,
 )
 from backend.app.services.farmer_profile.repository import farmer_repository
 
@@ -99,3 +102,56 @@ async def get_soil_test_history(farmer_id: str) -> List[SoilTestRecordResponse]:
             detail=f"Farmer profile with ID '{farmer_id}' not found."
         )
     return await farmer_repository.get_farmer_soil_tests(farmer_id)
+
+@router.post(
+    "/{farmer_id}/farm-history",
+    response_model=FarmHistoryRecordResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Log a historical crop yield and production cost record for a farmer"
+)
+async def add_farm_history(farmer_id: str, record: FarmHistoryRecordCreate) -> FarmHistoryRecordResponse:
+    farmer = await farmer_repository.get_farmer_by_id(farmer_id)
+    if not farmer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer profile with ID '{farmer_id}' not found."
+        )
+    return await farmer_repository.add_farm_history_record(farmer_id, record)
+
+@router.get(
+    "/{farmer_id}/farm-history",
+    response_model=List[FarmHistoryRecordResponse],
+    summary="Get multi-year crop and yield history for a farmer"
+)
+async def get_farm_history(farmer_id: str) -> List[FarmHistoryRecordResponse]:
+    farmer = await farmer_repository.get_farmer_by_id(farmer_id)
+    if not farmer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer profile with ID '{farmer_id}' not found."
+        )
+    return await farmer_repository.get_farm_history(farmer_id)
+
+@router.get(
+    "/{farmer_id}/full-history",
+    response_model=FullFarmHistoryResponse,
+    summary="Get unified farmer history including profile, soil tests, and crop records"
+)
+async def get_full_farm_history(farmer_id: str) -> FullFarmHistoryResponse:
+    farmer = await farmer_repository.get_farmer_by_id(farmer_id)
+    if not farmer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer profile with ID '{farmer_id}' not found."
+        )
+    soil_tests = await farmer_repository.get_farmer_soil_tests(farmer_id)
+    crop_hist = await farmer_repository.get_farm_history(farmer_id)
+
+    return FullFarmHistoryResponse(
+        farmer_id=farmer.id,
+        farmer_name=farmer.name,
+        location=f"{farmer.district}, {farmer.state}",
+        total_area_acres=farmer.land_area_acres,
+        soil_tests=soil_tests,
+        crop_history=crop_hist
+    )

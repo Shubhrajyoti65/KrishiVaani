@@ -1,3 +1,6 @@
+"""
+KrishiVaani — Farmer Profile, Soil History & Farm Records Schemas
+"""
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
@@ -71,3 +74,37 @@ class SoilTestRecordResponse(BaseModel):
     rainfall: float
     notes: Optional[str] = None
     recorded_at: str
+
+class FarmHistoryRecordCreate(BaseModel):
+    year: int = Field(..., ge=1990, le=2030, description="Cropping Year")
+    season: str = Field(..., description="Kharif, Rabi, Summer, Whole Year")
+    crop: str = Field(..., description="Crop grown")
+    area_acres: float = Field(..., gt=0)
+    yield_obtained_quintals: float = Field(..., ge=0)
+    production_cost_inr: Optional[float] = Field(None, ge=0)
+    revenue_inr: Optional[float] = Field(None, ge=0)
+    disease_experienced: Optional[str] = Field(None)
+    soil_condition_note: Optional[str] = Field(None)
+
+class FarmHistoryRecordResponse(BaseModel):
+    id: str
+    farmer_id: str
+    year: int
+    season: str
+    crop: str
+    area_acres: float
+    yield_obtained_quintals: float
+    yield_per_acre_quintals: float
+    production_cost_inr: Optional[float] = None
+    revenue_inr: Optional[float] = None
+    disease_experienced: Optional[str] = None
+    soil_condition_note: Optional[str] = None
+    recorded_at: str
+
+class FullFarmHistoryResponse(BaseModel):
+    farmer_id: str
+    farmer_name: str
+    location: str
+    total_area_acres: float
+    soil_tests: List[SoilTestRecordResponse]
+    crop_history: List[FarmHistoryRecordResponse]
