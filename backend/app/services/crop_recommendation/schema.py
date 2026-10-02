@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 class CropRecommendationRequest(BaseModel):
     nitrogen: float = Field(..., ge=0, le=200, description="Nitrogen content in soil (kg/ha)")
@@ -34,3 +34,8 @@ class CropRecommendationResponse(BaseModel):
     top_recommendations: List[CropConfidence]
     soil_health_assessment: Dict[str, str]
     advisory_notes: List[str]
+    # Compatibility aliases for frontend components
+    recommended_crop: Optional[str] = None
+    top_alternatives: Optional[List[Dict[str, Any]]] = None
+    suitability_tier: Optional[str] = "High suitability"
+    agronomic_rationale: Optional[str] = None

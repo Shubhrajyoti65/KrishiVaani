@@ -63,22 +63,34 @@ class CropRecommendationEngine:
         self.load_or_train_model()
 
     def load_or_train_model(self):
+        self.label_encoder = None
         if os.path.exists(MODEL_FILE_PATH):
             try:
-                self.model = joblib.load(MODEL_FILE_PATH)
+                loaded = joblib.load(MODEL_FILE_PATH)
+                if isinstance(loaded, tuple):
+                    self.model = loaded[0]
+                    self.label_encoder = loaded[1]
+                else:
+                    self.model = loaded
                 return
             except Exception:
                 pass
         
-        custom_csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "data", "crop_recommendation", "Crop_recommendation.csv"
-        )
-        if os.path.exists(custom_csv_path):
-            try:
-                df = pd.read_csv(custom_csv_path)
-            except Exception:
-                df = generate_synthetic_agri_dataset()
-        else:
+        # Check standard path in data directory
+        data_candidates = [
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "Crop_recommendation", "Crop_recommendation.csv"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "crop_recommendation", "Crop_recommendation.csv"),
+        ]
+        df = None
+        for p in data_candidates:
+            if os.path.exists(p):
+                try:
+                    df = pd.read_csv(p)
+                    break
+                except Exception:
+                    pass
+
+        if df is None:
             df = generate_synthetic_agri_dataset()
 
         X = df[["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]]
@@ -87,6 +99,7 @@ class CropRecommendationEngine:
         clf = RandomForestClassifier(n_estimators=100, random_state=42)
         clf.fit(X, y)
         self.model = clf
+        self.label_encoder = None
         joblib.dump(clf, MODEL_FILE_PATH)
 
 
@@ -151,17 +164,23 @@ class CropRecommendationEngine:
 
         probs = self.model.predict_proba(input_features)[0]
 
-        classes = self.model.classes_
+        if hasattr(self, 'label_encoder') and self.label_encoder is not None:
+            classes = self.label_encoder.classes_
+        else:
+            classes = self.model.classes_
 
         # Sort by confidence
         sorted_indices = np.argsort(probs)[::-1]
         top_recommendations = [
-            CropConfidence(crop=classes[i], confidence=round(float(probs[i]), 4))
+            CropConfidence(crop=str(classes[i]), confidence=round(float(probs[i]), 4))
             for i in sorted_indices[:3]
         ]
 
         primary_crop = top_recommendations[0].crop
         primary_confidence = top_recommendations[0].confidence
+
+        tier = "High suitability" if primary_confidence >= 0.50 else "Moderate suitability" if primary_confidence >= 0.25 else "Low suitability"
+        alt_dicts = [{"crop": alt.crop, "probability": alt.confidence, "confidence": alt.confidence} for alt in top_recommendations[1:]]
 
         soil_assessment = self.assess_soil_health(req.nitrogen, req.phosphorus, req.potassium, req.ph)
         advisory = self.generate_advisory(primary_crop, req)
@@ -171,7 +190,11 @@ class CropRecommendationEngine:
             confidence=primary_confidence,
             top_recommendations=top_recommendations,
             soil_health_assessment=soil_assessment,
-            advisory_notes=advisory
+            advisory_notes=advisory,
+            recommended_crop=primary_crop,
+            top_alternatives=alt_dicts,
+            suitability_tier=tier,
+            agronomic_rationale=advisory[0] if advisory else f"Suited for current NPK: {req.nitrogen}-{req.phosphorus}-{req.potassium}."
         )
 
 # Global singleton instance

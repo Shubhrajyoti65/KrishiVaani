@@ -17,6 +17,12 @@ router = APIRouter(
     summary="Predict optimal crop for soil & climate profile",
     description="Accepts Nitrogen, Phosphorus, Potassium (NPK), Temperature, Humidity, pH, and Rainfall inputs and returns top recommended crops with confidence score and agronomic advisory."
 )
+@router.post(
+    "/recommend",
+    response_model=CropRecommendationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Recommend optimal crop for soil & climate profile (alias)"
+)
 async def predict_crop(request: CropRecommendationRequest) -> CropRecommendationResponse:
     try:
         recommendation = crop_engine.predict(request)

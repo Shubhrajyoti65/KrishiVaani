@@ -25,3 +25,18 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Chatbot agent error: {str(e)}"
         )
+
+# Additional alias router under /agriculture
+agri_chat_router = APIRouter(
+    prefix="/agriculture",
+    tags=["Agricultural AI Assistant"]
+)
+
+@agri_chat_router.post(
+    "/chat",
+    response_model=ChatResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Chat with Agricultural AI Assistant"
+)
+async def chat_with_agriculture_assistant(request: ChatRequest) -> ChatResponse:
+    return await chat_with_agent(request)

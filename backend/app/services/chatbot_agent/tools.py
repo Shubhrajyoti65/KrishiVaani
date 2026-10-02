@@ -157,6 +157,47 @@ def get_market_price_tool(crop: str, state: str) -> str:
     return json.dumps(result)
 
 
+# ── Tool 10: Agricultural RAG Knowledge Retrieval ─────────────────────────────
+@tool
+def query_agricultural_rag_tool(query: str, crop: Optional[str] = None, topic: Optional[str] = None) -> str:
+    """Retrieves authoritative agricultural guidelines from ICAR, CIBRC, and State Agricultural Universities on disease management, pest control, crop practices, soil health, and pesticide safety. ALWAYS use this tool before answering questions about pesticide recommendations, crop diseases, or soil improvement."""
+    from backend.app.services.agricultural_rag.retriever import agri_rag
+    citations = agri_rag.retrieve(query=query, crop=crop, topic=topic, top_k=3)
+    return agri_rag.format_grounded_context(citations)
+
+
+# ── Tool 11: 3-Year Crop Planning & Rotation ──────────────────────────────────
+@tool
+def generate_three_year_crop_plan_tool(
+    state: str,
+    district: str,
+    current_season: str = "Kharif",
+    previous_crop: str = "Rice"
+) -> str:
+    """Generates a complete 3-Year Crop Rotation Sequence (Year 1, Year 2, Year 3) and Soil Improvement Plan based on local soil norms, legume-nitrogen rotation principles, and pest break strategies."""
+    from backend.app.services.crop_planning.planner import planner_engine
+    from backend.app.services.crop_planning.schema import CropPlanRequest
+    req = CropPlanRequest(
+        state=state, district=district, current_season=current_season,
+        previous_crop=previous_crop
+    )
+    return planner_engine.generate_plan(req).model_dump_json()
+
+
+# ── Tool 12: Production Cost & Returns Calculator ─────────────────────────────
+@tool
+def calculate_production_cost_tool(
+    crop: str,
+    state: str,
+    area_acres: float = 1.0
+) -> str:
+    """Calculates operational farming production costs (seeds, fertilizer, pesticides, labour, irrigation, machinery, transport) and estimated gross return based on CACP/ICAR benchmarks. Use when farmer asks how much it costs to grow a crop or what return they can expect."""
+    from backend.app.services.production_cost.calculator import cost_calculator
+    from backend.app.services.production_cost.schema import ProductionCostRequest
+    req = ProductionCostRequest(crop=crop, state=state, area_acres=area_acres)
+    return cost_calculator.calculate_cost_and_returns(req).model_dump_json()
+
+
 # ── All tools list for the agent ──────────────────────────────────────────────
 ALL_TOOLS = [
     recommend_crop_tool,
@@ -168,4 +209,7 @@ ALL_TOOLS = [
     get_crop_calendar_tool,
     get_crop_rotation_tool,
     get_market_price_tool,
+    query_agricultural_rag_tool,
+    generate_three_year_crop_plan_tool,
+    calculate_production_cost_tool,
 ]

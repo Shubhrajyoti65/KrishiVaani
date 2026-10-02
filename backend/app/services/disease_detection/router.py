@@ -1,14 +1,18 @@
+"""
+KrishiVaani — Disease Detection & Advisory API Router
+"""
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status
 from typing import Optional
 from backend.app.services.disease_detection.schema import (
     Base64ImageRequest,
     DiseaseDetectionResponse,
+    DiseaseAdviceRequest,
 )
 from backend.app.services.disease_detection.model import disease_model
 
 router = APIRouter(
     prefix="/disease-detection",
-    tags=["Crop Disease Detection Computer Vision Engine"]
+    tags=["Crop Disease Detection & Advisory"]
 )
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "bmp"}
@@ -17,8 +21,15 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "bmp"}
     "/analyze",
     response_model=DiseaseDetectionResponse,
     status_code=status.HTTP_200_OK,
-    summary="Analyze crop leaf image file for disease detection",
-    description="Upload a crop leaf image (.jpg, .png, .webp). The AI model diagnoses leaf health status, identifies crop disease, confidence percentage, severity level, symptoms, and recommends organic and chemical remedies."
+    summary="Analyze crop leaf image for disease diagnosis and advisory",
+    description="Upload a crop leaf image (.jpg, .png, .webp). Returns crop, condition type, diagnosis, confidence, and ordered evidence-based advisory."
+)
+@router.post(
+    "/predict",
+    response_model=DiseaseDetectionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Predict disease/pest from plant leaf image",
+    description="Alias endpoint for disease prediction."
 )
 async def analyze_crop_image(
     file: UploadFile = File(..., description="Crop leaf image file"),
@@ -48,8 +59,7 @@ async def analyze_crop_image(
     "/analyze-base64",
     response_model=DiseaseDetectionResponse,
     status_code=status.HTTP_200_OK,
-    summary="Analyze base64 encoded crop leaf image",
-    description="Accepts base64 encoded image string (convenient for mobile app or WhatsApp chatbot image uploads)."
+    summary="Analyze base64 encoded crop leaf image"
 )
 async def analyze_crop_image_base64(request: Base64ImageRequest) -> DiseaseDetectionResponse:
     try:
@@ -60,4 +70,23 @@ async def analyze_crop_image_base64(request: Base64ImageRequest) -> DiseaseDetec
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Base64 disease detection processing failed: {str(e)}"
+        )
+
+@router.post(
+    "/advice",
+    response_model=DiseaseDetectionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve disease management advisory by crop & condition name"
+)
+async def get_disease_advice(request: DiseaseAdviceRequest) -> DiseaseDetectionResponse:
+    try:
+        return disease_model.get_advice(
+            crop=request.crop,
+            condition=request.condition,
+            confidence=request.confidence or 0.90
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Disease advisory generation failed: {str(e)}"
         )

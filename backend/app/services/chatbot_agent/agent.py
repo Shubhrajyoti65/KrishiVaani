@@ -28,9 +28,11 @@ You ONLY answer agriculture-related questions. For anything unrelated to farming
 soil, weather, pest, market prices, or government schemes — politely say:
 "I can only help with farming and agriculture topics."
 
-You have access to real tools for:
+You have access to real specialized tools for:
 - Crop recommendation (soil NPK + climate → best crop)
+- 3-Year Crop Planning & Multi-Year Sequence Optimization
 - Yield & MSP revenue prediction
+- Production cost & gross return calculation
 - Weather advisory and extreme alerts
 - Fertilizer and soil nutrient dose recommendation
 - Crop sowing/harvesting calendar by state
@@ -38,12 +40,13 @@ You have access to real tools for:
 - Leaf disease detection (requires image)
 - Satellite NDVI field health monitoring
 - Mandi/market price lookup
+- Agricultural RAG Knowledge Retrieval (authoritative ICAR / CIBRC / SAU guidelines)
 
-Always:
-1. Use the farmer's remembered location/soil data from conversation history when relevant.
-2. Provide answers in simple, practical language a rural farmer can understand.
-3. Include specific Indian product names (e.g. Urea, DAP, Carbendazim) when giving advice.
-4. Quote government MSP prices and scheme names where applicable.
+CRITICAL RULES FOR ADVISORY:
+1. NEVER invent or hallucinate chemical pesticides, active ingredients, dosages, or pre-harvest intervals. ALWAYS ground pesticide guidance in `query_agricultural_rag_tool`.
+2. Do NOT use LLM arithmetic for crop yield or production costs; rely strictly on specialized calculation tools.
+3. For multi-year cropping decisions, recommend structured 3-year sequences (incorporating legumes to fix nitrogen and break pest cycles).
+4. Provide answers in simple, practical language a rural farmer can understand.
 5. If asked in Hindi or Odia, respond in that language.
 """
 
@@ -135,12 +138,15 @@ async def _rule_based_response(request: ChatRequest) -> ChatResponse:
     structured_payload = {}
 
     # ── Weather ──────────────────────────────────────────────────────────────
-    if any(w in msg for w in ["weather", "rain", "temperature", "forecast", "alert",
-                               "heatwave", "frost", "मौसम", "बारिश", "ବର୍ଷା"]):
+    weather_keywords = ["weather", "forecast", "temperature", "heatwave", "frost", "alert", "मौसम", "बारिश", "ବର୍ଷା"]
+    is_weather_explicit = any(w in msg for w in weather_keywords) or (bool(re.search(r"\b(rain|raining|showers)\b", msg)) and not any(k in msg for k in ["crop", "grow", "plant", "sow", "yield"]))
+
+    if is_weather_explicit:
         district = request.district or "Delhi"
         state = request.state or "Delhi"
-        loc_match = re.search(r"in\s+([a-zA-Z]+)", request.message)
-        if loc_match:
+        stop_locs = {"my", "the", "this", "our", "a", "an", "soil", "field", "kharif", "rabi", "summer", "winter", "autumn", "pot"}
+        loc_match = re.search(r"\bin\s+([a-zA-Z]+)", request.message, re.IGNORECASE)
+        if loc_match and loc_match.group(1).lower() not in stop_locs:
             district = loc_match.group(1).capitalize()
         try:
             raw = await get_weather_advisory_tool.ainvoke({"district": district, "state": state})
@@ -328,6 +334,76 @@ async def _rule_based_response(request: ChatRequest) -> ChatResponse:
                 f"• Canopy Status: {data['ndvi_metrics']['canopy_health_status']}\n"
                 f"• Advisory: {data['canopy_advisories'][0] if data.get('canopy_advisories') else 'N/A'}"
             )
+        except Exception:
+            pass
+
+    # ── 3-Year Crop Planning ──────────────────────────────────────────────────
+    if any(w in msg for w in ["3-year", "three year", "3 year", "multi-year", "multi year", "planning", "3 वर्ष", "ତିନି ବର୍ଷ"]):
+        try:
+            from backend.app.services.chatbot_agent.tools import generate_three_year_crop_plan_tool
+            raw = generate_three_year_crop_plan_tool.invoke({
+                "state": request.state or "Punjab",
+                "district": request.district or "Ludhiana",
+                "current_season": "Kharif",
+                "previous_crop": "Rice"
+            })
+            data = json.loads(raw)
+            tools_invoked.append(ToolInvocationResult(
+                tool_name="generate_three_year_crop_plan_tool",
+                input_args={"state": request.state or "Punjab"},
+                output_summary=f"3-Year Plan: {[p['recommended_crop'] for p in data['three_year_plan']]}"
+            ))
+            structured_payload["three_year_plan"] = data
+            seq = " → ".join([f"{p['year_label'].split()[0]}: {p['recommended_crop']}" for p in data['three_year_plan']])
+            reply_parts.append(
+                f"🌱 **3-Year Crop Rotation Plan ({data['location']})**\n"
+                f"• Sequence: **{seq}**\n"
+                f"• Basis: {data['soil_source_label']}\n"
+                f"• Agronomic Benefit: {data['three_year_plan'][1]['agronomic_rationale']}\n"
+                f"• Soil Plan: {data['soil_improvement_plan']['cover_crops_and_green_manure'][0]}"
+            )
+        except Exception:
+            pass
+
+    # ── Production Cost & Return Calculator ───────────────────────────────────
+    if any(w in msg for w in ["cost", "expense", "budget", "input cost", "laagat", "খরচ", "लागत"]):
+        crop = "rice"
+        for c in ["wheat", "cotton", "maize", "potato", "sugarcane", "chickpea", "mustard"]:
+            if c in msg:
+                crop = c; break
+        try:
+            from backend.app.services.chatbot_agent.tools import calculate_production_cost_tool
+            raw = calculate_production_cost_tool.invoke({
+                "crop": crop, "state": request.state or "Punjab", "area_acres": 2.0
+            })
+            data = json.loads(raw)
+            tools_invoked.append(ToolInvocationResult(
+                tool_name="calculate_production_cost_tool",
+                input_args={"crop": crop, "area_acres": 2.0},
+                output_summary=f"Total Cost: ₹{data['total_production_cost_inr']:,}"
+            ))
+            structured_payload["production_cost"] = data
+            reply_parts.append(
+                f"💰 **Production Cost & Returns — {crop.capitalize()}** (2 acres)\n"
+                f"• Total Estimated Cost: **₹{data['total_production_cost_inr']:,}** (₹{data['cost_per_acre_inr']:,}/acre)\n"
+                f"• Estimated Revenue: ₹{data.get('estimated_revenue_inr', 0):,}\n"
+                f"• Expected Gross Return: **₹{data.get('estimated_gross_return_inr', 0):,}**\n"
+                f"• Note: {data['disclaimer']}"
+            )
+        except Exception:
+            pass
+
+    # ── Agricultural RAG Knowledge Retrieval ──────────────────────────────────
+    if any(w in msg for w in ["blast", "blight", "disease", "pest", "pesticide", "cure", "treatment", "fungus", "soil health", "organic cure", "কীଟପତଙ୍ଗ", "रोग", "कीटनाशक"]):
+        try:
+            from backend.app.services.chatbot_agent.tools import query_agricultural_rag_tool
+            raw = query_agricultural_rag_tool.invoke({"query": request.message})
+            tools_invoked.append(ToolInvocationResult(
+                tool_name="query_agricultural_rag_tool",
+                input_args={"query": request.message},
+                output_summary="Grounded ICAR/CIBRC agricultural guidelines retrieved"
+            ))
+            reply_parts.append(f"📚 **Grounded Agricultural Knowledge (ICAR / CIBRC)**\n{raw}")
         except Exception:
             pass
 
