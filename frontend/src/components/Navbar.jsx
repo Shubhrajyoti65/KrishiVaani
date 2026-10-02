@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Sprout, Globe, Activity, MessageSquare, CloudSun,
-  Leaf, Satellite, LineChart, Menu, X, ChevronDown
+  Leaf, Satellite, LineChart, Menu, X, ChevronDown, User
 } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { id: 'disease',   label: 'Leaf Scanner', icon: Leaf },
   { id: 'weather',   label: 'Weather', icon: CloudSun },
   { id: 'satellite', label: 'NDVI Map', icon: Satellite },
+  { id: 'profile',   label: 'My Farm', icon: User },
   { id: 'chatbot',   label: 'AI Chat', icon: MessageSquare },
 ];
 

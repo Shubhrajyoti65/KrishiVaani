@@ -153,6 +153,41 @@ export default function WeatherWidget({ compact = false }) {
     );
   };
 
+  const searchLiveLocations = async (query) => {
+    if (!query || query.trim().length < 2) return [];
+    try {
+      const res = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=10&language=en&format=json`
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.results) return [];
+
+      return data.results.map((r) => {
+        const placeName = r.name;
+        const stateName = r.admin1 || '';
+        const countryName = r.country || 'India';
+        const districtName = r.admin2 || placeName;
+        const subtext = [districtName !== placeName ? districtName : '', stateName, countryName].filter(Boolean).join(', ');
+
+        return {
+          id: `${placeName}-${r.latitude}-${r.longitude}`,
+          name: placeName,
+          district: districtName,
+          state: stateName,
+          country: countryName,
+          lat: r.latitude,
+          lon: r.longitude,
+          label: placeName,
+          subtext: subtext,
+          tag: stateName || countryName,
+        };
+      });
+    } catch (e) {
+      return [];
+    }
+  };
+
   const current = weatherData?.current;
   const isHeatwave = current && current.temperature_c >= 40;
   const isFrost = current && current.temperature_c <= 4;
@@ -162,19 +197,19 @@ export default function WeatherWidget({ compact = false }) {
 
   if (compact) {
     return (
-      <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+      <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center', position: 'relative', zIndex: 50, overflow: 'visible' }}>
         <div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: '180px', position: 'relative', zIndex: 50 }}>
+            <div style={{ flex: 1, minWidth: '180px' }}>
               <SearchableSelect
                 options={MAJOR_DISTRICTS_AND_CITIES}
                 value={cityName}
                 onChange={handleCitySelect}
-                placeholder="Search city or district..."
-                searchPlaceholder="Type any Indian district, town or village..."
+                onSearchAsync={searchLiveLocations}
+                placeholder="Search city, district, village..."
+                searchPlaceholder="Type any location in India..."
                 compact={true}
                 allowCustom={true}
-                isLocationSearch={true}
                 customActionLabel="Search live weather for"
                 icon={MapPin}
               />
@@ -263,21 +298,21 @@ export default function WeatherWidget({ compact = false }) {
         </p>
       </div>
 
-      {/* Search Header Bar with High Stacking Context to prevent card overlap */}
-      <div className="card" style={{ marginBottom: '2rem', position: 'relative', zIndex: 50 }}>
+      {/* Search Header Bar */}
+      <div className="card" style={{ marginBottom: '2rem', position: 'relative', zIndex: 100, overflow: 'visible' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: '1rem', alignItems: 'center' }}>
           <div>
             <label className="form-label" style={{ marginBottom: '0.35rem', fontWeight: 600 }}>
-              Search Any City or Agricultural District:
+              Search Any City, District or Village:
             </label>
             <SearchableSelect
               options={MAJOR_DISTRICTS_AND_CITIES}
               value={cityName}
               onChange={handleCitySelect}
-              placeholder="Type any Indian district or town (e.g. Bhadrak, Cuttack, Nashik, Guntur, Varanasi)..."
-              searchPlaceholder="Type any Indian town, city, or district (e.g. Bhadrak)..."
+              onSearchAsync={searchLiveLocations}
+              placeholder="Search any village, district, or city (e.g. Bhadrak, Kendrapara, Varanasi, Pune)..."
+              searchPlaceholder="Type any location across India or world (e.g. Bhadrak)..."
               allowCustom={true}
-              isLocationSearch={true}
               customActionLabel="Fetch live weather for"
               icon={MapPin}
             />

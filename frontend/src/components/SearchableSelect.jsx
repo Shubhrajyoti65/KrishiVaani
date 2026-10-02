@@ -1,22 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, Check, X, Plus, MapPin, Loader2, Globe } from 'lucide-react';
+import { Search, ChevronDown, Check, X, Plus, Loader2, MapPin, Globe } from 'lucide-react';
 
 /**
  * SearchableSelect
  * Props:
- *  - options: Array of strings or objects { id/value, name/label, category/state/tag, icon, subtitle, lat, lon }
+ *  - options: Array of strings or objects { id/value, name/label, category/state/tag, icon, subtitle }
  *  - value: Current selected value (string or id)
  *  - onChange: (selectedValue, selectedObject) => void
  *  - placeholder: Placeholder text for search / trigger
  *  - label: Optional label text above the input
  *  - icon: Optional Lucide Icon component
- *  - allowCustom: Boolean - if true, allows typing and picking a custom value not in list
- *  - customActionLabel: Optional label for custom input (e.g. "Use custom location")
- *  - isLocationSearch: Boolean - if true, fetches dynamic live geocoding for ANY Indian city/district/town
- *  - groupBy: Optional key string to group items (e.g. 'state', 'category')
- *  - maxWidth: Optional max-width string
- *  - compact: Boolean - for smaller height/padding
- *  - disabled: Boolean
+ *  - allowCustom: If true, allows typing any custom value and submitting
+ *  - customActionLabel: Text for the custom add button
+ *  - onSearchAsync: Optional async function `async (query) => Array<Item>` for live geocoding/API search
+ *  - groupBy: Optional field to group options by
+ *  - maxWidth: Container max width
+ *  - compact: If true, renders smaller padding
+ *  - disabled: Disable select
  */
 export default function SearchableSelect({
   options = [],
@@ -28,7 +28,7 @@ export default function SearchableSelect({
   icon: Icon,
   allowCustom = false,
   customActionLabel = 'Use custom value',
-  isLocationSearch = false,
+  onSearchAsync = null,
   groupBy,
   maxWidth,
   compact = false,
@@ -38,12 +38,12 @@ export default function SearchableSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [liveGeoOptions, setLiveGeoOptions] = useState([]);
-  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [asyncResults, setAsyncResults] = useState([]);
+  const [isSearchingAsync, setIsSearchingAsync] = useState(false);
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Normalize static options into standard format: { value, label, subtext, tag, icon, group, original }
+  // Normalize static options into standard format: { value, label, subtext, tag, icon, group }
   const normalizedOptions = React.useMemo(() => {
     return options.map(opt => {
       if (typeof opt === 'string') {
@@ -56,8 +56,6 @@ export default function SearchableSelect({
         tag: opt.tag || opt.category || (opt.season ? `${opt.season}` : null),
         icon: opt.icon || null,
         group: groupBy ? opt[groupBy] : null,
-        lat: opt.lat,
-        lon: opt.lon,
         original: opt,
       };
     });
@@ -82,91 +80,51 @@ export default function SearchableSelect({
     });
   }, [normalizedOptions, search]);
 
-  // Live dynamic geocoding for any village/town/district across India & worldwide
+  // Live async search (e.g. for geocoding real cities/districts across India)
   useEffect(() => {
-    if (!isLocationSearch || !isOpen) {
-      setLiveGeoOptions([]);
+    if (!onSearchAsync || !search.trim() || search.trim().length < 2) {
+      setAsyncResults([]);
+      setIsSearchingAsync(false);
       return;
     }
 
-    const query = search.trim();
-    if (query.length < 2) {
-      setLiveGeoOptions([]);
-      return;
-    }
+    let active = true;
+    setIsSearchingAsync(true);
 
     const timer = setTimeout(async () => {
-      setIsGeocoding(true);
       try {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Geocoding network error');
-        const data = await res.json();
-        
-        if (data && data.results && data.results.length > 0) {
-          // Sort India locations first
-          const sorted = [...data.results].sort((a, b) => {
-            if (a.country_code === 'IN' && b.country_code !== 'IN') return -1;
-            if (a.country_code !== 'IN' && b.country_code === 'IN') return 1;
-            return (b.population || 0) - (a.population || 0);
-          });
-
-          const formatted = sorted.map(r => {
-            const state = r.admin1 || '';
-            const district = r.admin2 || r.name;
-            const country = r.country || 'India';
-            const locationName = r.name;
-            
-            let sub = state ? `${state}, ${country}` : country;
-            if (district && district !== locationName) {
-              sub = `${district}, ${state ? state + ', ' : ''}${country}`;
+        const rawResults = await onSearchAsync(search.trim());
+        if (active) {
+          const formatted = (rawResults || []).map(r => {
+            if (typeof r === 'string') {
+              return { value: r, label: r, subtext: null, tag: 'Live Match', isLive: true, original: r };
             }
-
             return {
-              value: locationName,
-              label: locationName,
-              subtext: `${sub} (GPS: ${r.latitude.toFixed(2)}°N, ${r.longitude.toFixed(2)}°E)`,
-              tag: country === 'India' ? (state || 'India') : country,
-              icon: '📍',
+              value: r.id ?? r.value ?? r.name ?? r.district ?? '',
+              label: r.name ?? r.label ?? r.district ?? '',
+              subtext: r.subtext || (r.state ? `${r.state}, ${r.country || 'India'}` : (r.country || '')),
+              tag: r.tag || (r.state ? `${r.state}` : 'Live Location'),
+              icon: r.icon || null,
               isLive: true,
-              original: {
-                name: locationName,
-                district: district,
-                state: state,
-                country: country,
-                lat: +r.latitude.toFixed(4),
-                lon: +r.longitude.toFixed(4),
-                tag: state ? `${state} District` : country,
-              }
+              original: r,
             };
           });
-
-          setLiveGeoOptions(formatted);
-        } else {
-          setLiveGeoOptions([]);
+          setAsyncResults(formatted);
+          setIsSearchingAsync(false);
         }
       } catch (err) {
-        setLiveGeoOptions([]);
-      } finally {
-        setIsGeocoding(false);
+        if (active) {
+          setAsyncResults([]);
+          setIsSearchingAsync(false);
+        }
       }
     }, 220);
 
-    return () => clearTimeout(timer);
-  }, [search, isLocationSearch, isOpen]);
-
-  // Combine live dynamic options with filtered static options
-  const finalOptions = React.useMemo(() => {
-    if (!isLocationSearch || liveGeoOptions.length === 0) {
-      return filteredStatic;
-    }
-
-    // Merge live results, avoiding duplicates with static list
-    const liveNames = new Set(liveGeoOptions.map(l => l.label.toLowerCase()));
-    const remainingStatic = filteredStatic.filter(s => !liveNames.has(s.label.toLowerCase()));
-
-    return [...liveGeoOptions, ...remainingStatic];
-  }, [isLocationSearch, liveGeoOptions, filteredStatic]);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [search, onSearchAsync]);
 
   // Close on click outside
   useEffect(() => {
@@ -185,7 +143,8 @@ export default function SearchableSelect({
       setTimeout(() => searchInputRef.current?.focus(), 50);
     } else {
       setSearch('');
-      setLiveGeoOptions([]);
+      setAsyncResults([]);
+      setIsSearchingAsync(false);
     }
   }, [isOpen]);
 
@@ -195,26 +154,27 @@ export default function SearchableSelect({
     }
     setIsOpen(false);
     setSearch('');
-    setLiveGeoOptions([]);
+    setAsyncResults([]);
   };
 
   const handleCustomSelect = () => {
     if (!search.trim()) return;
-    const customObj = { name: search.trim(), district: search.trim(), value: search.trim(), custom: true };
     if (onChange) {
-      onChange(search.trim(), customObj);
+      onChange(search.trim(), { name: search.trim(), value: search.trim(), district: search.trim(), custom: true });
     }
     setIsOpen(false);
     setSearch('');
-    setLiveGeoOptions([]);
+    setAsyncResults([]);
   };
 
   const handleClear = (e) => {
     e.stopPropagation();
     if (onChange) onChange('', null);
     setSearch('');
-    setLiveGeoOptions([]);
   };
+
+  const hasAsync = Boolean(onSearchAsync);
+  const totalOptionsCount = asyncResults.length > 0 ? (asyncResults.length + filteredStatic.length) : filteredStatic.length;
 
   return (
     <div
@@ -222,7 +182,7 @@ export default function SearchableSelect({
       className={`searchable-select-container ${className}`}
       style={{
         position: 'relative',
-        zIndex: isOpen ? 9999 : 'auto',
+        zIndex: isOpen ? 1000 : 1,
         width: maxWidth ? '100%' : 'auto',
         maxWidth: maxWidth || '100%',
         ...style
@@ -247,14 +207,14 @@ export default function SearchableSelect({
           justifyContent: 'space-between',
           gap: '0.5rem',
           padding: compact ? '0.45rem 0.75rem' : '0.65rem 0.9rem',
-          background: '#ffffff',
+          background: 'var(--bg-card)',
           border: isOpen ? '1.5px solid var(--green-primary)' : '1.5px solid var(--border-color)',
           borderRadius: 'var(--radius-sm)',
           fontSize: compact ? '0.85rem' : '0.92rem',
           color: value ? 'var(--text-primary)' : 'var(--text-muted)',
           textAlign: 'left',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          boxShadow: isOpen ? '0 0 0 3px rgba(61, 122, 61, 0.18)' : 'var(--shadow-sm)',
+          boxShadow: isOpen ? '0 0 0 3px rgba(61, 122, 61, 0.18)' : 'none',
           transition: 'all 0.15s ease',
           outline: 'none',
         }}
@@ -262,11 +222,11 @@ export default function SearchableSelect({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
           {Icon && <Icon size={compact ? 15 : 17} color="var(--green-primary)" style={{ flexShrink: 0 }} />}
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <span style={{ fontWeight: value ? 700 : 400, color: value ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <span style={{ fontWeight: value ? 600 : 400, color: value ? 'var(--text-primary)' : 'var(--text-muted)' }}>
               {displayLabel}
             </span>
             {displaySubtext && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '0.4rem', fontWeight: 400 }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '0.4rem' }}>
                 ({displaySubtext})
               </span>
             )}
@@ -304,7 +264,7 @@ export default function SearchableSelect({
         </div>
       </button>
 
-      {/* Dropdown Menu Popup with Isolated High Z-Index & Solid Background */}
+      {/* Dropdown Menu Popup with Highest Z-Index to Prevent Overlap */}
       {isOpen && (
         <div
           className="searchable-menu"
@@ -314,22 +274,19 @@ export default function SearchableSelect({
             left: 0,
             right: 0,
             zIndex: 99999,
-            background: '#ffffff',
-            border: '1.5px solid var(--green-pale)',
+            background: 'var(--bg-card)',
+            border: '1.5px solid var(--border-color)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.22)',
+            boxShadow: '0 16px 40px rgba(28, 43, 26, 0.22), 0 4px 12px rgba(0,0,0,0.08)',
             overflow: 'hidden',
+            animation: 'fadeIn 0.15s ease',
             minWidth: '280px',
           }}
         >
-          {/* Search Input Bar */}
-          <div style={{ padding: '0.6rem', borderBottom: '1px solid var(--border-color)', background: '#faf9f5' }}>
+          {/* Search Box */}
+          <div style={{ padding: '0.6rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-section)' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              {isGeocoding ? (
-                <Loader2 size={15} className="animate-spin" color="var(--green-primary)" style={{ position: 'absolute', left: '0.6rem' }} />
-              ) : (
-                <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.6rem' }} />
-              )}
+              <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.65rem' }} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -337,8 +294,10 @@ export default function SearchableSelect({
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
-                    if (finalOptions.length > 0) {
-                      handleSelect(finalOptions[0]);
+                    if (asyncResults.length > 0) {
+                      handleSelect(asyncResults[0]);
+                    } else if (filteredStatic.length > 0) {
+                      handleSelect(filteredStatic[0]);
                     } else if (allowCustom && search.trim()) {
                       handleCustomSelect();
                     }
@@ -346,14 +305,14 @@ export default function SearchableSelect({
                     setIsOpen(false);
                   }
                 }}
-                placeholder={isLocationSearch ? "Type any Indian city, town, or district..." : searchPlaceholder}
+                placeholder={searchPlaceholder}
                 style={{
                   width: '100%',
-                  padding: '0.5rem 0.6rem 0.5rem 2.1rem',
+                  padding: '0.5rem 2rem 0.5rem 2.1rem',
                   fontSize: '0.88rem',
-                  border: '1.5px solid var(--border-color)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-sm)',
-                  background: '#ffffff',
+                  background: 'var(--bg-card)',
                   color: 'var(--text-primary)',
                   outline: 'none',
                 }}
@@ -364,7 +323,7 @@ export default function SearchableSelect({
                   onClick={() => setSearch('')}
                   style={{
                     position: 'absolute',
-                    right: '0.5rem',
+                    right: '0.6rem',
                     background: 'none',
                     border: 'none',
                     color: 'var(--text-muted)',
@@ -380,13 +339,15 @@ export default function SearchableSelect({
 
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem', padding: '0 0.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>
-                {isGeocoding ? (
-                  <span style={{ color: 'var(--green-primary)', fontWeight: 600 }}>Searching live locations...</span>
+                {isSearchingAsync ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--green-primary)' }}>
+                    <Loader2 size={12} className="animate-spin" /> Searching locations across India & globe...
+                  </span>
                 ) : (
-                  `${finalOptions.length} ${finalOptions.length === 1 ? 'location' : 'locations'} found`
+                  `${totalOptionsCount} ${totalOptionsCount === 1 ? 'option' : 'options'} available`
                 )}
               </span>
-              {search && <span style={{ color: 'var(--green-primary)', fontWeight: 600 }}>Press Enter to pick top match</span>}
+              {search && <span style={{ color: 'var(--green-primary)' }}>Press Enter to pick top match</span>}
             </div>
           </div>
 
@@ -396,15 +357,14 @@ export default function SearchableSelect({
               maxHeight: '280px',
               overflowY: 'auto',
               padding: '0.35rem 0',
-              background: '#ffffff',
             }}
           >
-            {/* Live Search Custom Option */}
-            {allowCustom && search.trim() && !finalOptions.some(f => f.label.toLowerCase() === search.toLowerCase().trim()) && (
+            {/* Custom input button if allowCustom & search query typed */}
+            {allowCustom && search.trim() && (
               <div
                 onClick={handleCustomSelect}
                 style={{
-                  padding: '0.6rem 0.85rem',
+                  padding: '0.55rem 0.85rem',
                   fontSize: '0.86rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -421,19 +381,93 @@ export default function SearchableSelect({
               </div>
             )}
 
-            {finalOptions.length === 0 && !allowCustom ? (
+            {/* Live Geocoded Results Section */}
+            {asyncResults.length > 0 && (
+              <div>
+                <div style={{ padding: '0.35rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--green-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(61, 122, 61, 0.08)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Globe size={12} /> Live Geocoded Matches ({asyncResults.length})
+                </div>
+                {asyncResults.map((opt, idx) => {
+                  const isSelected = String(opt.value).toLowerCase() === String(value).toLowerCase();
+                  return (
+                    <div
+                      key={`async-${opt.value}-${idx}`}
+                      onClick={() => handleSelect(opt)}
+                      style={{
+                        padding: '0.55rem 0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        background: isSelected ? 'var(--green-bg)' : 'transparent',
+                        color: isSelected ? 'var(--green-primary)' : 'var(--text-primary)',
+                        fontSize: '0.88rem',
+                        borderLeft: '3px solid var(--green-primary)',
+                        transition: 'background 0.1s ease',
+                      }}
+                      onMouseEnter={e => {
+                        if (!isSelected) e.currentTarget.style.background = 'var(--bg-section)';
+                      }}
+                      onMouseLeave={e => {
+                        if (!isSelected) e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+                        <MapPin size={16} color="var(--green-primary)" style={{ flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {opt.label}
+                          </div>
+                          {opt.subtext && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              {opt.subtext}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '4px',
+                            background: 'var(--green-pale)',
+                            color: 'var(--green-primary)',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {opt.tag || 'Live GPS'}
+                        </span>
+                        {isSelected && <Check size={15} color="var(--green-primary)" />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Static Options Section */}
+            {asyncResults.length > 0 && filteredStatic.length > 0 && (
+              <div style={{ padding: '0.35rem 0.85rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', background: 'var(--bg-section)', marginTop: '0.25rem' }}>
+                Pre-loaded Agricultural Districts
+              </div>
+            )}
+
+            {filteredStatic.length === 0 && asyncResults.length === 0 && !allowCustom ? (
               <div style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                No locations found for "{search}". Type any Indian town or city name.
+                {isSearchingAsync ? 'Searching across India...' : `No matches found for "${search}"`}
               </div>
             ) : (
-              finalOptions.map((opt, idx) => {
+              filteredStatic.map((opt, idx) => {
                 const isSelected = String(opt.value).toLowerCase() === String(value).toLowerCase();
                 return (
                   <div
                     key={`${opt.value}-${idx}`}
                     onClick={() => handleSelect(opt)}
                     style={{
-                      padding: '0.55rem 0.85rem',
+                      padding: '0.5rem 0.85rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -442,31 +476,23 @@ export default function SearchableSelect({
                       background: isSelected ? 'var(--green-bg)' : 'transparent',
                       color: isSelected ? 'var(--green-primary)' : 'var(--text-primary)',
                       fontSize: '0.88rem',
-                      borderBottom: '1px solid #f2f0eb',
                       transition: 'background 0.1s ease',
                     }}
                     onMouseEnter={e => {
-                      if (!isSelected) e.currentTarget.style.background = '#f4f6f1';
+                      if (!isSelected) e.currentTarget.style.background = 'var(--bg-section)';
                     }}
                     onMouseLeave={e => {
                       if (!isSelected) e.currentTarget.style.background = 'transparent';
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                      <span style={{ fontSize: '1rem', flexShrink: 0 }}>
-                        {opt.isLive ? '📍' : (opt.icon || '🌾')}
-                      </span>
+                      {opt.icon && <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{opt.icon}</span>}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: isSelected ? 700 : 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <span>{opt.label}</span>
-                          {opt.isLive && (
-                            <span style={{ fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
-                              Live GPS
-                            </span>
-                          )}
+                        <div style={{ fontWeight: isSelected ? 700 : 500 }}>
+                          {opt.label}
                         </div>
                         {opt.subtext && (
-                          <div style={{ fontSize: '0.74rem', color: isSelected ? 'var(--green-primary)' : 'var(--text-muted)', marginTop: '2px' }}>
+                          <div style={{ fontSize: '0.75rem', color: isSelected ? 'var(--green-primary)' : 'var(--text-muted)' }}>
                             {opt.subtext}
                           </div>
                         )}
@@ -480,8 +506,8 @@ export default function SearchableSelect({
                             fontSize: '0.7rem',
                             padding: '0.15rem 0.45rem',
                             borderRadius: '4px',
-                            background: isSelected ? 'var(--green-pale)' : '#ebeee8',
-                            color: isSelected ? 'var(--green-primary)' : 'var(--text-secondary)',
+                            background: isSelected ? 'var(--green-pale)' : 'var(--bg-section)',
+                            color: isSelected ? 'var(--green-primary)' : 'var(--text-muted)',
                             fontWeight: 600,
                           }}
                         >
