@@ -1,0 +1,47 @@
+{
+  "model_name": "yield_prediction_xgboost_regressor",
+  "version": "1.0.0",
+  "dataset": "Crop Production data.csv",
+  "features": [
+    "Crop",
+    "State_Name",
+    "Season",
+    "Area"
+  ],
+  "target": "Yield (tonnes/hectare)",
+  "target_formula": "Production / Area",
+  "training_date": "2026-09-29 04:29:38",
+  "best_model": "XGBoost Regressor",
+  "all_candidates": {
+    "Random Forest Regressor": {
+      "metrics": {
+        "mae": 1.255,
+        "rmse": 3.8309,
+        "r2": 0.8969,
+        "target_unit": "tonnes/hectare"
+      }
+    },
+    "XGBoost Regressor": {
+      "metrics": {
+        "mae": 1.2594,
+        "rmse": 3.6962,
+        "r2": 0.904,
+        "target_unit": "tonnes/hectare"
+      }
+    },
+    "CatBoost Regressor": {
+      "metrics": {
+        "mae": 1.5722,
+        "rmse": 4.0069,
+        "r2": 0.8872,
+        "target_unit": "tonnes/hectare"
+      }
+    }
+  },
+  "selected_metrics": {
+    "mae": 1.2594,
+    "rmse": 3.6962,
+    "r2": 0.904,
+    "target_unit": "tonnes/hectare"
+  }
+}
