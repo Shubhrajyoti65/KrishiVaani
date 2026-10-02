@@ -15,11 +15,22 @@ from backend.app.services.voice_language_service.router import router as voice_r
 from backend.app.services.fertilizer_recommendation.router import router as fertilizer_router
 from backend.app.services.crop_calendar.router import router as calendar_router
 from backend.app.services.crop_rotation.router import router as rotation_router
+from backend.app.services.agricultural_rag.router import router as rag_router
+from backend.app.services.crop_planning.router import router as planning_router
+from backend.app.services.production_cost.router import router as cost_router
+from backend.app.services.chatbot_agent.router import agri_chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize DB connection
     await db_manager.connect()
+    # Pre-warm DigiGreen DaViT-Base model asynchronously
+    try:
+        import asyncio
+        from backend.app.services.disease_detection.digigreen_engine import digigreen_engine
+        asyncio.create_task(asyncio.to_thread(digigreen_engine.load_model))
+    except Exception:
+        pass
     yield
     # Shutdown: Close DB connection
     await db_manager.close()
@@ -60,10 +71,14 @@ app.include_router(weather_router, prefix=settings.API_V1_STR)
 app.include_router(disease_router, prefix=settings.API_V1_STR)
 app.include_router(satellite_router, prefix=settings.API_V1_STR)
 app.include_router(chat_router, prefix=settings.API_V1_STR)
+app.include_router(agri_chat_router, prefix=settings.API_V1_STR)
 app.include_router(voice_router, prefix=settings.API_V1_STR)
 app.include_router(fertilizer_router, prefix=settings.API_V1_STR)
 app.include_router(calendar_router, prefix=settings.API_V1_STR)
 app.include_router(rotation_router, prefix=settings.API_V1_STR)
+app.include_router(rag_router, prefix=settings.API_V1_STR)
+app.include_router(planning_router, prefix=settings.API_V1_STR)
+app.include_router(cost_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
