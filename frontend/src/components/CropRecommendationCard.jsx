@@ -160,61 +160,108 @@ export default function CropRecommendationCard() {
           )}
 
           {/* Result */}
-          {result && (
-            <div className="animate-fade-in-up">
-              <div style={{
-                background: 'linear-gradient(135deg, var(--green-primary) 0%, var(--green-light) 100%)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '2rem',
-                color: '#ffffff',
-                marginBottom: '1rem',
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.82rem', opacity: 0.75 }}>
-                  <CheckCircle size={14} /> Best Crop Recommendation
+          {result && (() => {
+            const cropName = result.recommended_crop || result.primary_recommendation || 'Crop';
+            const alts = result.top_alternatives || (result.top_recommendations ? result.top_recommendations.slice(1).map(r => ({ crop: r.crop, probability: r.confidence })) : []);
+            return (
+              <div className="animate-fade-in-up">
+                <div style={{
+                  background: 'linear-gradient(135deg, var(--green-primary) 0%, var(--green-light) 100%)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '2rem',
+                  color: '#ffffff',
+                  marginBottom: '1rem',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', opacity: 0.9 }}>
+                      <CheckCircle size={14} /> Recommended Crop
+                    </div>
+                    {result.suitability_tier && (
+                      <span style={{
+                        background: 'rgba(255,255,255,0.22)',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        border: '1px solid rgba(255,255,255,0.3)'
+                      }}>
+                        {result.suitability_tier}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, marginBottom: '0.5rem', textTransform: 'capitalize' }}>
+                    {cropName}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.85 }}>
+                    Confidence: <strong>{(result.confidence * 100).toFixed(1)}%</strong>
+                  </div>
                 </div>
-                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, marginBottom: '0.5rem', textTransform: 'capitalize' }}>
-                  {result.recommended_crop}
-                </div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.85 }}>
-                  Confidence: <strong>{(result.confidence * 100).toFixed(1)}%</strong>
-                </div>
-              </div>
 
-              {/* Top alternatives */}
-              {result.top_alternatives?.length > 0 && (
-                <div className="card" style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Alternative Crops</div>
-                  {result.top_alternatives.slice(0, 3).map((alt, i) => (
-                    <div key={alt.crop} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: i < 2 ? '1px solid var(--border-color)' : 'none' }}>
-                      <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{alt.crop}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: 80, height: 6, background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
-                          <div style={{ width: `${alt.probability * 100}%`, height: '100%', background: 'var(--green-pale)', borderRadius: '3px' }} />
+                {/* Top alternatives */}
+                {alts.length > 0 && (
+                  <div className="card" style={{ marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Alternative Crops</div>
+                    {alts.slice(0, 3).map((alt, i) => {
+                      const prob = alt.probability ?? alt.confidence ?? 0;
+                      return (
+                        <div key={alt.crop} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: i < 2 ? '1px solid var(--border-color)' : 'none' }}>
+                          <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{alt.crop}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: 80, height: 6, background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: `${prob * 100}%`, height: '100%', background: 'var(--green-pale)', borderRadius: '3px' }} />
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{(prob * 100).toFixed(0)}%</span>
+                          </div>
                         </div>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{(alt.probability * 100).toFixed(0)}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
 
-              {/* Soil summary */}
-              <div className="card card-cream">
-                <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Your Soil Profile</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', textAlign: 'center' }}>
-                  {[['N', form.nitrogen, 'Nitrogen'], ['P', form.phosphorus, 'Phosphorus'], ['K', form.potassium, 'Potassium']].map(([k, v, label]) => (
-                    <div key={k}>
-                      <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--green-primary)' }}>{v}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{label} kg/ha</div>
+                {/* Agronomic advisory notes */}
+                {result.advisory_notes?.length > 0 && (
+                  <div className="card" style={{ marginBottom: '1rem', background: '#f5faf2', border: '1px solid #d4e8c8' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.88rem', color: 'var(--green-primary)' }}>Agronomic Advisory</div>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      {result.advisory_notes.map((note, idx) => (
+                        <li key={idx} style={{ marginBottom: '0.3rem' }}>{note}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Soil health assessment */}
+                {result.soil_health_assessment && (
+                  <div className="card card-cream" style={{ marginBottom: '1rem' }}>
+                    <div style={{ fontWeight: 700, marginBottom: '0.6rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Soil Nutrient Assessment</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.78rem' }}>
+                      {Object.entries(result.soil_health_assessment).map(([nutrient, desc]) => (
+                        <div key={nutrient} style={{ background: '#fff', padding: '0.5rem 0.7rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                          <strong style={{ color: 'var(--green-primary)' }}>{nutrient}:</strong> {desc}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Soil inputs summary */}
+                <div className="card card-cream">
+                  <div style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Your Soil Profile</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', textAlign: 'center' }}>
+                    {[['N', form.nitrogen, 'Nitrogen'], ['P', form.phosphorus, 'Phosphorus'], ['K', form.potassium, 'Potassium']].map(([k, v, label]) => (
+                      <div key={k}>
+                        <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--green-primary)' }}>{v}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{label} kg/ha</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 

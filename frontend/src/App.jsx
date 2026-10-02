@@ -9,9 +9,10 @@ import ChatbotWidget from './components/ChatbotWidget';
 import FertilizerAdvisor from './components/FertilizerAdvisor';
 import CropCalendar from './components/CropCalendar';
 import CropRotation from './components/CropRotation';
+import FarmerProfileManager from './components/FarmerProfileManager';
 import {
   Sprout, LineChart, Leaf, CloudSun, Satellite, MessageSquare,
-  FlaskConical, CalendarDays, RefreshCw,
+  FlaskConical, CalendarDays, RefreshCw, User,
   ArrowRight, Star, Users, TrendingUp, Award, ChevronRight, Zap
 } from 'lucide-react';
 
@@ -64,6 +65,12 @@ const FEATURES = [
     title: 'Satellite NDVI Health',
     desc: 'Sentinel-2 vegetation canopy health index & crop water stress tracking',
     stat: 'NDVI', statLabel: 'live index',
+  },
+  {
+    id: 'profile', icon: User, color: 'green',
+    title: 'My Farm & Soil Records',
+    desc: 'Digital farm profile, laboratory soil test history, and seasonal harvest logs',
+    stat: 'Records', statLabel: 'persisted',
   },
   {
     id: 'chatbot', icon: MessageSquare, color: 'purple',
@@ -390,6 +397,7 @@ export default function App() {
               {activeTab === 'fertilizer' && <FertilizerAdvisor />}
               {activeTab === 'calendar'   && <CropCalendar />}
               {activeTab === 'rotation'   && <CropRotation />}
+              {activeTab === 'profile'    && <FarmerProfileManager />}
             </div>
           </div>
         )}
