@@ -65,3 +65,61 @@ def test_disease_detection_invalid_format_fails():
     response = client.post("/api/v1/disease-detection/analyze", files=files)
     assert response.status_code == 400
     assert "Unsupported image file format" in response.json()["detail"]
+
+def test_digigreen_model_provenance_and_metadata():
+    img_bytes = create_dummy_leaf_image_bytes(color=(34, 175, 34))
+    files = {"file": ("leaf.jpg", img_bytes, "image/jpeg")}
+    response = client.post("/api/v1/disease-detection/analyze", files=files, data={"crop_hint": "rice"})
+    assert response.status_code == 200
+    res = response.json()
+    assert "DigiGreen/crop-disease-pest-detection-dg" in res.get("model_source", "")
+    assert "category" in res
+    assert isinstance(res.get("top_diseases"), list)
+
+def test_disease_advisory_endpoint():
+    payload = {
+        "crop": "Rice",
+        "condition": "Blast",
+        "confidence": 0.92
+    }
+    response = client.post("/api/v1/disease-detection/advice", json=payload)
+    assert response.status_code == 200
+    res = response.json()
+    assert res["crop"] == "Rice"
+    assert "Blast" in res["condition"]
+    assert len(res["chemical_options"]) > 0
+    assert res["chemical_options"][0]["active_ingredient"].startswith("Tricyclazole")
+    assert len(res["biological_organic_options"]) > 0
+
+def test_disease_detection_tomato_crop_selection():
+    img_bytes = create_dummy_leaf_image_bytes(color=(34, 175, 34))
+    files = {"file": ("tomato_leaf.jpg", img_bytes, "image/jpeg")}
+    response = client.post("/api/v1/disease-detection/analyze", files=files, data={"crop_hint": "tomato"})
+    assert response.status_code == 200
+    res = response.json()
+    assert res["crop"] == "Tomato"
+    assert res["crop_name"] == "Tomato"
+    assert res.get("is_crop_user_selected") is True
+    assert "DigiGreen/crop-disease-pest-detection-dg" in res.get("model_source", "")
+
+def test_disease_detection_crop_synonyms():
+    # Test Indian agricultural synonyms like chilli -> chili pepper, dhan -> rice, corn -> maize
+    img_bytes = create_dummy_leaf_image_bytes(color=(34, 175, 34))
+    
+    # Test chilli synonym
+    files = {"file": ("chilli_leaf.jpg", img_bytes, "image/jpeg")}
+    response = client.post("/api/v1/disease-detection/analyze", files=files, data={"crop_hint": "chilli"})
+    assert response.status_code == 200
+    res = response.json()
+    assert res.get("is_crop_user_selected") is True
+    assert "Chil" in res["crop"]
+
+    # Test dhan synonym
+    files = {"file": ("dhan_leaf.jpg", img_bytes, "image/jpeg")}
+    response = client.post("/api/v1/disease-detection/analyze", files=files, data={"crop_hint": "dhan"})
+    assert response.status_code == 200
+    res = response.json()
+    assert res.get("is_crop_user_selected") is True
+    assert res["crop"] == "Rice"
+
+
