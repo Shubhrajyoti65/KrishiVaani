@@ -132,6 +132,23 @@ async def get_farm_history(farmer_id: str) -> List[FarmHistoryRecordResponse]:
         )
     return await farmer_repository.get_farm_history(farmer_id)
 
+@router.post(
+    "/{farmer_id}/crops-history",
+    response_model=FarmHistoryRecordResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Alias: Log a historical crop record"
+)
+async def add_crops_history_alias(farmer_id: str, record: FarmHistoryRecordCreate) -> FarmHistoryRecordResponse:
+    return await add_farm_history(farmer_id, record)
+
+@router.get(
+    "/{farmer_id}/crops-history",
+    response_model=List[FarmHistoryRecordResponse],
+    summary="Alias: Get multi-year crop history"
+)
+async def get_crops_history_alias(farmer_id: str) -> List[FarmHistoryRecordResponse]:
+    return await get_farm_history(farmer_id)
+
 @router.get(
     "/{farmer_id}/full-history",
     response_model=FullFarmHistoryResponse,

@@ -1,1 +1,1 @@
-# Voice & Multilingual Bhashini Service Package
+# Voice & Multilingual Sarvam AI Service Package

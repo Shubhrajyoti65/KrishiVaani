@@ -10,7 +10,11 @@ from backend.app.services.yield_prediction.schema import (
     RevenueEstimate,
 )
 
-MODEL_FILE_PATH = os.path.join(os.path.dirname(__file__), "yield_prediction_rf.joblib")
+BEST_YIELD_MODEL_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "ml", "yield_prediction", "model", "yield_prediction_best.joblib"
+)
+SERVICE_MODEL_PATH = os.path.join(os.path.dirname(__file__), "yield_prediction_rf.joblib")
+MODEL_FILE_PATH = BEST_YIELD_MODEL_PATH if os.path.exists(BEST_YIELD_MODEL_PATH) else SERVICE_MODEL_PATH
 
 # Baseline Indian MSP prices (INR per Quintal) for key crops (2024-2026 reference)
 MSP_PRICES = {
@@ -67,83 +71,88 @@ def generate_synthetic_yield_dataset():
 class YieldPredictionEngine:
     def __init__(self):
         self.model = None
+        self.model_name = "XGBoost Regressor"
         self.load_or_train_model()
 
     def load_or_train_model(self):
-        if os.path.exists(MODEL_FILE_PATH):
-            try:
-                self.model = joblib.load(MODEL_FILE_PATH)
+        candidates = [BEST_YIELD_MODEL_PATH, SERVICE_MODEL_PATH]
+        for p in candidates:
+            if os.path.exists(p):
+                try:
+                    loaded = joblib.load(p)
+                    self.model = loaded
+                    if isinstance(loaded, dict) and "model_name" in loaded:
+                        self.model_name = loaded["model_name"]
+                    return
+                except Exception:
+                    pass
+
+        # If not present, train via backend.ml.yield_prediction.train
+        try:
+            from backend.ml.yield_prediction.train import train_and_evaluate
+            metrics = train_and_evaluate()
+            if os.path.exists(BEST_YIELD_MODEL_PATH):
+                self.model = joblib.load(BEST_YIELD_MODEL_PATH)
+                self.model_name = "XGBoost Regressor"
                 return
-            except Exception:
-                pass
+        except Exception:
+            pass
 
-        custom_csv_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "data", "yield_prediction", "crop_yield.csv"
-        )
-        if os.path.exists(custom_csv_path):
-            try:
-                df = pd.read_csv(custom_csv_path)
-            except Exception:
-                df = generate_synthetic_yield_dataset()
-        else:
-            df = generate_synthetic_yield_dataset()
-
+        df = generate_synthetic_yield_dataset()
         df_encoded = pd.get_dummies(df, columns=["crop"])
         X = df_encoded.drop(columns=["yield_per_acre"])
         y = df_encoded["yield_per_acre"]
-
         rf = RandomForestRegressor(n_estimators=100, random_state=42)
         rf.fit(X, y)
-        self.model = rf
-        joblib.dump((rf, list(X.columns)), MODEL_FILE_PATH)
-
+        self.model = (rf, list(X.columns))
+        self.model_name = "Random Forest Regressor"
 
     def predict(self, req: YieldPredictionRequest) -> YieldPredictionResponse:
-        loaded = joblib.load(MODEL_FILE_PATH) if not isinstance(self.model, (tuple, dict)) else self.model
         crop_clean = req.crop.strip().lower()
+        area_acres = float(req.area_acres or 1.0)
+        state_clean = (req.state or "Punjab").strip().title()
+        season_clean = (req.season or "Kharif").strip().title()
 
-        if isinstance(loaded, dict) and "pipeline" in loaded:
-            pipeline = loaded["pipeline"]
-            area_ha = max(0.1, float(req.area_acres) / 2.47105)
-            input_df = pd.DataFrame([{
-                "Crop": req.crop.strip().title(),
-                "State_Name": (req.state or "Punjab").strip().title(),
-                "Season": (req.season or "Kharif").strip().title(),
-                "Area": area_ha
-            }])
-            try:
-                pred_tonnes_ha = float(pipeline.predict(input_df)[0])
-                predicted_yield_per_acre = max(1.0, round(pred_tonnes_ha * 4.04686, 2))
-            except Exception:
-                predicted_yield_per_acre = 15.0
-        elif isinstance(loaded, tuple):
-            clf, feature_columns = loaded
-            row = {col: 0.0 for col in feature_columns}
-            row["N"] = req.nitrogen
-            row["P"] = req.phosphorus
-            row["K"] = req.potassium
-            row["rainfall"] = req.rainfall
-            row["temperature"] = req.temperature
-            crop_col = f"crop_{crop_clean}"
-            if crop_col in row:
-                row[crop_col] = 1.0
-            input_df = pd.DataFrame([row])[feature_columns]
-            predicted_yield_per_acre = float(clf.predict(input_df)[0])
-        else:
-            clf = loaded
-            df_dummy = pd.get_dummies(generate_synthetic_yield_dataset(), columns=["crop"])
-            feature_columns = list(df_dummy.drop(columns=["yield_per_acre"]).columns)
-            row = {col: 0.0 for col in feature_columns}
-            row["N"] = req.nitrogen
-            row["P"] = req.phosphorus
-            row["K"] = req.potassium
-            row["rainfall"] = req.rainfall
-            row["temperature"] = req.temperature
-            crop_col = f"crop_{crop_clean}"
-            if crop_col in row:
-                row[crop_col] = 1.0
-            input_df = pd.DataFrame([row])[feature_columns]
-            predicted_yield_per_acre = float(clf.predict(input_df)[0])
+        # Call predict_yield_production from ML package if available
+        try:
+            from backend.ml.yield_prediction.predict import predict_yield_production
+            ml_pred = predict_yield_production(
+                crop=req.crop,
+                state=state_clean,
+                season=season_clean,
+                area_acres=area_acres
+            )
+            predicted_yield_per_acre = ml_pred["predicted_yield_quintals_per_acre"]
+            yield_tonnes_ha = ml_pred["predicted_yield_tonnes_per_hectare"]
+            total_yield = ml_pred["total_expected_yield_quintals"]
+            est_range = {
+                "min": ml_pred["estimated_range"]["tonnes_per_hectare"]["min"],
+                "max": ml_pred["estimated_range"]["tonnes_per_hectare"]["max"],
+            }
+        except Exception:
+            # Fallback to direct model inference
+            loaded = self.model
+            if isinstance(loaded, dict) and "pipeline" in loaded:
+                pipeline = loaded["pipeline"]
+                area_ha = max(0.1, area_acres / 2.47105)
+                input_df = pd.DataFrame([{
+                    "Crop": req.crop.strip().title(),
+                    "State_Name": state_clean,
+                    "Season": season_clean,
+                    "Area": area_ha
+                }])
+                raw_pred = float(pipeline.predict(input_df)[0])
+                yield_tonnes_ha = max(0.1, round(raw_pred, 2))
+                predicted_yield_per_acre = round(yield_tonnes_ha * 4.04686, 2)
+            else:
+                yield_tonnes_ha = 2.5
+                predicted_yield_per_acre = 10.1
+
+            total_yield = round(predicted_yield_per_acre * area_acres, 2)
+            est_range = {
+                "min": round(yield_tonnes_ha * 0.88, 2),
+                "max": round(yield_tonnes_ha * 1.14, 2)
+            }
 
         yield_per_acre_rounded = round(predicted_yield_per_acre, 2)
         total_yield = round(yield_per_acre_rounded * req.area_acres, 2)

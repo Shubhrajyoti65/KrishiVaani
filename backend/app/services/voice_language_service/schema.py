@@ -31,6 +31,7 @@ class SpeechToTextResponse(BaseModel):
     transcribed_text: str
     language: str
     confidence: float
+    engine: Optional[str] = "offline"
 
 class TextToSpeechRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Text to synthesize into spoken audio")
@@ -41,3 +42,4 @@ class TextToSpeechResponse(BaseModel):
     audio_base64: str
     audio_format: str
     language: str
+    engine: Optional[str] = "offline"
