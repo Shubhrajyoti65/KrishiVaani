@@ -9,10 +9,10 @@ const STATES = [
 ];
 
 const SEASON_COLOR = {
-  Kharif: { bg: '#e6f4ea', color: '#2d7a3f', border: '#b0dcb8' },
-  Rabi:   { bg: '#e8f0fc', color: '#1a56c2', border: '#b0c8f0' },
-  Annual: { bg: '#f5ece2', color: '#8b4f1a', border: '#d4b890' },
-  Zaid:   { bg: '#fffbe6', color: '#9a7000', border: '#e8d060' },
+  Kharif: { bg: 'var(--green-bg)',           color: 'var(--green-primary)', border: 'var(--green-pale)' },
+  Rabi:   { bg: 'rgba(37, 99, 235, 0.16)',   color: '#3b82f6',              border: 'rgba(37, 99, 235, 0.35)' },
+  Annual: { bg: 'rgba(217, 119, 6, 0.16)',   color: 'var(--brown)',         border: 'rgba(217, 119, 6, 0.35)' },
+  Zaid:   { bg: 'var(--gold-pale)',          color: 'var(--gold)',          border: 'rgba(234, 179, 8, 0.35)' },
 };
 
 export default function CropCalendar({ onBack }) {

@@ -216,60 +216,160 @@ export default function ChatbotWidget({ currentLang = 'en', onBack }) {
         </div>
 
         {/* Chat window */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '600px' }}>
+        <div
+          className="card-glass"
+          style={{
+            padding: 0,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '620px',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
           {/* Header */}
-          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--green-bg)' }}>
-            <div style={{ width: 38, height: 38, background: 'var(--green-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <Bot size={20} color="#fff" />
-              <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: 10, height: 10, background: '#4ade80', border: '2px solid #fff', borderRadius: '50%' }} />
+          <div
+            style={{
+              padding: '1.1rem 1.35rem',
+              borderBottom: '1px solid var(--border-glass)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--green-bg)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  background: 'linear-gradient(135deg, var(--green-primary) 0%, var(--green-light) 100%)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  boxShadow: '0 4px 14px var(--green-glow)',
+                }}
+              >
+                <Bot size={22} color="#fff" />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '1px',
+                    right: '1px',
+                    width: 10,
+                    height: 10,
+                    background: '#22c55e',
+                    border: '2px solid var(--bg-main)',
+                    borderRadius: '50%',
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>KrishiVaani AI Farming Guide</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--green-primary)', fontWeight: 600 }}>● Online — Sarvam AI Voice & Multilingual RAG</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>KrishiVaani AI</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--green-primary)' }}>● Online — Multilingual Support</div>
-            </div>
+
+            <span
+              className="badge"
+              style={{
+                background: 'var(--bg-surface-glass)',
+                border: '1px solid var(--border-glass)',
+                fontSize: '0.74rem',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              LangChain Agent
+            </span>
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.1rem',
+              background: 'var(--bg-main)',
+            }}
+          >
             {messages.map(msg => (
-              <div key={msg.id} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: msg.role === 'user' ? 'var(--green-primary)' : '#ffffff',
-                  border: msg.role === 'assistant' ? '1.5px solid var(--border-color)' : 'none',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {msg.role === 'user' ? <User size={16} color="#fff" /> : <Bot size={16} color="var(--green-primary)" />}
-                </div>
-                <div style={{ maxWidth: '75%' }}>
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                    background: msg.role === 'user' ? 'var(--green-primary)' : '#ffffff',
-                    color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
-                    border: msg.role === 'assistant' ? '1px solid var(--border-color)' : 'none',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.65,
+              <div
+                key={msg.id}
+                style={{
+                  display: 'flex',
+                  gap: '0.75rem',
+                  alignItems: 'flex-start',
+                  flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                }}
+              >
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    background: msg.role === 'user' ? 'var(--green-primary)' : 'var(--bg-surface-glass)',
+                    border: '1px solid var(--border-glass)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     boxShadow: 'var(--shadow-sm)',
-                  }}>
+                  }}
+                >
+                  {msg.role === 'user' ? <User size={16} color="#fff" /> : <Bot size={17} color="var(--green-primary)" />}
+                </div>
+                <div style={{ maxWidth: '78%' }}>
+                  <div
+                    style={{
+                      padding: '0.85rem 1.15rem',
+                      borderRadius: msg.role === 'user' ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
+                      background: msg.role === 'user' ? 'var(--green-primary)' : 'var(--bg-card)',
+                      color: msg.role === 'user' ? '#ffffff' : 'var(--text-primary)',
+                      border: msg.role === 'user' ? 'none' : '1px solid var(--border-glass)',
+                      fontSize: '0.92rem',
+                      lineHeight: 1.65,
+                      boxShadow: 'var(--shadow-sm)',
+                      backdropFilter: 'blur(10px)',
+                    }}
+                  >
                     {msg.text}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem', textAlign: msg.role === 'user' ? 'right' : 'left', paddingInline: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: '0.5rem' }}>
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      marginTop: '0.3rem',
+                      textAlign: msg.role === 'user' ? 'right' : 'left',
+                      paddingInline: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      gap: '0.6rem',
+                    }}
+                  >
                     <span>{fmt(msg.ts)}</span>
                     {msg.role === 'assistant' && (
                       <button
                         onClick={() => speakMessage(msg.id, msg.text)}
                         title={playingId === msg.id ? "Stop voice" : "Listen in voice (Sarvam AI)"}
                         style={{
-                          background: 'none',
-                          border: 'none',
+                          background: 'var(--bg-surface-glass)',
+                          border: '1px solid var(--border-glass)',
                           cursor: 'pointer',
-                          padding: '0.1rem 0.3rem',
-                          color: playingId === msg.id ? 'var(--green-primary)' : 'var(--text-muted)',
+                          padding: '0.15rem 0.45rem',
+                          color: playingId === msg.id ? 'var(--green-primary)' : 'var(--text-secondary)',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.25rem',
-                          borderRadius: '4px'
+                          gap: '0.3rem',
+                          borderRadius: 'var(--radius-pill)',
+                          transition: 'all 0.2s ease',
                         }}
                       >
                         {playingId === msg.id ? <VolumeX size={13} color="var(--green-primary)" /> : <Volume2 size={13} />}
@@ -282,13 +382,44 @@ export default function ChatbotWidget({ currentLang = 'en', onBack }) {
             ))}
 
             {loading && (
-              <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#ffffff', border: '1.5px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Bot size={16} color="var(--green-primary)" />
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    background: 'var(--bg-surface-glass)',
+                    border: '1px solid var(--border-glass)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Bot size={17} color="var(--green-primary)" />
                 </div>
-                <div style={{ padding: '0.75rem 1.1rem', borderRadius: '4px 16px 16px 16px', background: '#ffffff', border: '1px solid var(--border-color)', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div
+                  style={{
+                    padding: '0.85rem 1.25rem',
+                    borderRadius: '4px 18px 18px 18px',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-glass)',
+                    display: 'flex',
+                    gap: '6px',
+                    alignItems: 'center',
+                  }}
+                >
                   {[0, 1, 2].map(i => (
-                    <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green-pale)', animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
+                    <div
+                      key={i}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: 'var(--green-primary)',
+                        animation: `bounce 1.2s ${i * 0.2}s infinite`,
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -297,10 +428,27 @@ export default function ChatbotWidget({ currentLang = 'en', onBack }) {
           </div>
 
           {/* Input bar */}
-          <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.65rem', alignItems: 'center', background: '#fafaf8' }}>
+          <div
+            style={{
+              padding: '1rem 1.25rem',
+              borderTop: '1px solid var(--border-glass)',
+              display: 'flex',
+              gap: '0.75rem',
+              alignItems: 'center',
+              background: 'var(--bg-section)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
             <input
               className="form-input"
-              style={{ flex: 1, borderRadius: 'var(--radius-pill)', padding: '0.65rem 1.1rem' }}
+              style={{
+                flex: 1,
+                borderRadius: 'var(--radius-pill)',
+                padding: '0.75rem 1.25rem',
+                background: 'var(--bg-input)',
+                border: '1.5px solid var(--border-glass)',
+                color: 'var(--text-primary)',
+              }}
               placeholder={currentLang === 'hi' ? 'अपना सवाल लिखें...' : currentLang === 'or' ? 'ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଲିଖନ୍ତୁ...' : 'Ask a farming question...'}
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -309,15 +457,37 @@ export default function ChatbotWidget({ currentLang = 'en', onBack }) {
             />
             <button
               onClick={toggleMic}
-              style={{ width: 42, height: 42, borderRadius: '50%', border: 'none', background: listening ? '#ef4444' : 'var(--green-bg)', color: listening ? '#fff' : 'var(--green-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                border: '1px solid var(--border-glass)',
+                background: listening ? '#ef4444' : 'var(--green-bg)',
+                color: listening ? '#fff' : 'var(--green-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.2s ease',
+              }}
+              title={listening ? "Stop voice input" : "Speak your query"}
             >
-              {listening ? <MicOff size={18} /> : <Mic size={18} />}
+              {listening ? <MicOff size={19} /> : <Mic size={19} />}
             </button>
             <button
               onClick={() => send()}
               className="btn btn-primary"
-              style={{ width: 42, height: 42, borderRadius: '50%', padding: 0, flexShrink: 0 }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                padding: 0,
+                flexShrink: 0,
+                boxShadow: '0 4px 14px var(--green-glow)',
+              }}
               disabled={loading || !input.trim()}
+              title="Send question"
             >
               {loading ? <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} />}
             </button>

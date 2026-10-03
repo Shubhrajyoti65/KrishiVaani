@@ -5,8 +5,8 @@ const CROPS  = ['rice','wheat','maize','cotton','mustard','soybean','chickpea','
 const SOILS  = ['Alluvial','Black','Red','Laterite','Sandy Loam','Clayey Loam','Loamy'];
 const STATES = ['Punjab','Haryana','Uttar Pradesh','Bihar','Odisha','West Bengal','Andhra Pradesh','Tamil Nadu','Karnataka','Maharashtra','Gujarat','Rajasthan','Madhya Pradesh'];
 
-const PRIORITY_COLOR = { 1: 'var(--green-primary)', 2: '#2563eb', 3: '#9a6e0a', 4: 'var(--text-muted)' };
-const PRIORITY_BG    = { 1: 'var(--green-bg)', 2: '#e8f0fc', 3: 'var(--gold-pale)', 4: 'var(--bg-section)' };
+const PRIORITY_COLOR = { 1: 'var(--green-primary)', 2: '#2563eb', 3: 'var(--gold)', 4: 'var(--text-muted)' };
+const PRIORITY_BG    = { 1: 'var(--green-bg)', 2: 'rgba(37, 99, 235, 0.16)', 3: 'var(--gold-pale)', 4: 'var(--bg-section)' };
 
 export default function CropRotation({ onBack }) {
   const [activeMode, setActiveMode] = useState('multi-year'); // 'single-year' | 'multi-year'
@@ -161,11 +161,11 @@ export default function CropRotation({ onBack }) {
           style={{
             padding: '0.5rem 1.25rem',
             borderRadius: '8px',
-            border: 'none',
+            border: activeMode === 'multi-year' ? '1px solid var(--border-glass)' : '1px solid transparent',
             cursor: 'pointer',
             fontWeight: 600,
             fontSize: '0.875rem',
-            background: activeMode === 'multi-year' ? '#fff' : 'transparent',
+            background: activeMode === 'multi-year' ? 'var(--bg-card)' : 'transparent',
             color: activeMode === 'multi-year' ? 'var(--green-primary)' : 'var(--text-muted)',
             boxShadow: activeMode === 'multi-year' ? 'var(--shadow-sm)' : 'none',
             display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -179,11 +179,11 @@ export default function CropRotation({ onBack }) {
           style={{
             padding: '0.5rem 1.25rem',
             borderRadius: '8px',
-            border: 'none',
+            border: activeMode === 'single-year' ? '1px solid var(--border-glass)' : '1px solid transparent',
             cursor: 'pointer',
             fontWeight: 600,
             fontSize: '0.875rem',
-            background: activeMode === 'single-year' ? '#fff' : 'transparent',
+            background: activeMode === 'single-year' ? 'var(--bg-card)' : 'transparent',
             color: activeMode === 'single-year' ? 'var(--green-primary)' : 'var(--text-muted)',
             boxShadow: activeMode === 'single-year' ? 'var(--shadow-sm)' : 'none',
             display: 'flex', alignItems: 'center', gap: '0.4rem',

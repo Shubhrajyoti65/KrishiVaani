@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import WeatherWidget from './components/WeatherWidget';
 import CropRecommendationCard from './components/CropRecommendationCard';
@@ -10,361 +10,1261 @@ import FertilizerAdvisor from './components/FertilizerAdvisor';
 import CropCalendar from './components/CropCalendar';
 import CropRotation from './components/CropRotation';
 import FarmerProfileManager from './components/FarmerProfileManager';
+import { AGRI_IMAGES, getHeroOverlay } from './data/agriImages';
 import {
   Sprout, LineChart, Leaf, CloudSun, Satellite, MessageSquare,
   FlaskConical, CalendarDays, RefreshCw, User,
-  ArrowRight, ArrowLeft, Star, Users, TrendingUp, Award, ChevronRight, Zap
+  ArrowRight, ArrowLeft, Star, Users, TrendingUp, Award, ChevronRight,
+  Zap, ShieldCheck, CheckCircle2, Sparkles, Layers, Activity,
+  Cpu, MapPin, Droplets, Thermometer, Wind, Check
 } from 'lucide-react';
 
-/* ── Feature cards for the dashboard grid ── */
+/* ── Platform modules for the dashboard / capabilities grid ── */
 const FEATURES = [
   {
-    id: 'crop-rec', icon: Sprout, color: 'green',
+    id: 'crop-rec',
+    icon: Sprout,
+    tag: 'AI/ML Model',
     title: 'Crop Recommendation',
-    desc: 'Soil NPK & climate-matched crop prediction using Random Forest ML',
-    stat: '22 crops', statLabel: 'supported',
+    desc: 'Soil NPK, pH & climate-matched crop prediction using Random Forest ML calibrated for Indian soils.',
+    stat: '22 Crops',
+    statLabel: 'AI Supported',
+    accent: 'var(--green-primary)'
   },
   {
-    id: 'yield', icon: LineChart, color: 'gold',
+    id: 'yield',
+    icon: LineChart,
+    tag: 'Market & Govt MSP',
     title: 'Yield & MSP Revenue',
-    desc: 'Harvest yield forecast with Indian government MSP price estimates',
-    stat: '₹ MSP', statLabel: 'live prices',
+    desc: 'Harvest yield forecast with live Indian government Minimum Support Price (MSP) profit estimation.',
+    stat: '₹ MSP',
+    statLabel: 'Live Pricing',
+    accent: 'var(--gold)'
   },
   {
-    id: 'fertilizer', icon: FlaskConical, color: 'brown',
-    title: 'Fertilizer Advisor',
-    desc: 'ICAR-based Urea/DAP/MOP dose recommendation with deficiency diagnosis',
-    stat: 'ICAR', statLabel: 'guidelines',
+    id: 'fertilizer',
+    icon: FlaskConical,
+    tag: 'ICAR Agronomy',
+    title: 'Fertilizer & Soil Doctor',
+    desc: 'ICAR-standard Urea, DAP, and MOP dose optimization with nutrient deficiency visual diagnosis.',
+    stat: '100% ICAR',
+    statLabel: 'Standards',
+    accent: '#d97706'
   },
   {
-    id: 'calendar', icon: CalendarDays, color: 'blue',
-    title: 'Crop Calendar',
-    desc: 'State-wise sowing & harvesting windows from Agriculture Dept bulletins',
-    stat: '10+', statLabel: 'crops',
-  },
-  {
-    id: 'rotation', icon: RefreshCw, color: 'purple',
-    title: 'Crop Rotation',
-    desc: 'Agronomic rotation rules for better soil health and pest control',
-    stat: 'N+P+K', statLabel: 'balanced',
-  },
-  {
-    id: 'disease', icon: Leaf, color: 'green',
+    id: 'disease',
+    icon: Leaf,
+    tag: 'Computer Vision',
     title: 'Leaf Disease Scanner',
-    desc: 'Computer Vision photo upload with organic cure remedies',
-    stat: '38+', statLabel: 'diseases',
+    desc: 'Instant leaf photo diagnosis identifying 38+ plant pathologies with verified organic & chemical remedies.',
+    stat: '38+ Diseases',
+    statLabel: 'Identified',
+    accent: 'var(--green-primary)'
   },
   {
-    id: 'weather', icon: CloudSun, color: 'blue',
-    title: 'Weather & Alerts',
-    desc: 'Real-time weather advisory with heatwave, frost & flood early warnings',
-    stat: '24 hr', statLabel: 'forecast',
+    id: 'weather',
+    icon: CloudSun,
+    tag: 'Hyperlocal IMD',
+    title: 'Weather & Disaster Alerts',
+    desc: '24-hour hyperlocal weather advisory with heatwave, frost, storm, and flood early warnings.',
+    stat: '24-Hour',
+    statLabel: 'Live Radar',
+    accent: '#2563eb'
   },
   {
-    id: 'satellite', icon: Satellite, color: 'dark',
+    id: 'satellite',
+    icon: Satellite,
+    tag: 'Sentinel-2 Geo',
     title: 'Satellite NDVI Health',
-    desc: 'Sentinel-2 vegetation canopy health index & crop water stress tracking',
-    stat: 'NDVI', statLabel: 'live index',
+    desc: 'Sentinel-2 multispectral vegetation canopy greenness index and field moisture stress telemetry.',
+    stat: '10m Res',
+    statLabel: 'Canopy Index',
+    accent: '#059669'
   },
   {
-    id: 'profile', icon: User, color: 'green',
+    id: 'rotation',
+    icon: RefreshCw,
+    tag: '3-Year Strategy',
+    title: '3-Year Crop Planning',
+    desc: 'Science-backed 3-year crop rotation sequencing to replenish soil nitrogen and disrupt pest life-cycles.',
+    stat: 'N+P+K',
+    statLabel: 'Regenerative',
+    accent: '#8b5cf6'
+  },
+  {
+    id: 'calendar',
+    icon: CalendarDays,
+    tag: 'Agro-Climatic',
+    title: 'Crop Sowing Calendar',
+    desc: 'State-wise sowing, weeding, and harvesting windows synthesized from Agriculture Department bulletins.',
+    stat: 'Pan-India',
+    statLabel: 'Seasonal Map',
+    accent: '#0284c7'
+  },
+  {
+    id: 'profile',
+    icon: User,
+    tag: 'Digital Land Ledger',
     title: 'My Farm & Soil Records',
-    desc: 'Digital farm profile, laboratory soil test history, and seasonal harvest logs',
-    stat: 'Records', statLabel: 'persisted',
+    desc: 'Digital farmer profile, laboratory soil test history, geo-tagged plot records, and seasonal harvest logs.',
+    stat: 'Encrypted',
+    statLabel: 'Farm Vault',
+    accent: 'var(--green-primary)'
   },
   {
-    id: 'chatbot', icon: MessageSquare, color: 'purple',
+    id: 'chatbot',
+    icon: MessageSquare,
+    tag: 'LangChain + Voice',
     title: 'AI Farming Assistant',
-    desc: 'LangChain-powered chatbot answering farming queries in Hindi, Odia & English',
-    stat: '9 tools', statLabel: 'connected',
+    desc: 'Context-aware agricultural assistant answering farming queries in Hindi, Odia & English with voice output.',
+    stat: 'Sarvam AI',
+    statLabel: 'Voice Enabled',
+    accent: '#9333ea'
   },
 ];
 
-const ICON_COLOR_MAP = {
-  green:  { bg: 'var(--green-bg)',   color: 'var(--green-primary)', border: 'var(--green-pale)' },
-  gold:   { bg: 'var(--gold-pale)',  color: '#9a6e0a',               border: '#e8d080' },
-  brown:  { bg: '#f5ece2',           color: 'var(--brown)',          border: '#ddc8a8' },
-  blue:   { bg: '#e8f0fa',           color: '#2563eb',               border: '#c8d8f0' },
-  dark:   { bg: '#e8ede6',           color: 'var(--bg-dark)',        border: '#c8d8c0' },
-  purple: { bg: '#f0eaf8',           color: '#7c3aed',               border: '#d8c8f0' },
-};
-
-/* ── Stats bar ── */
+/* ── Live Key Metrics ── */
 const STATS = [
-  { icon: Users,      value: '2.8M+', label: 'Farmers Served' },
-  { icon: Star,       value: '4.9/5', label: 'Satisfaction Score' },
-  { icon: TrendingUp, value: '38%',   label: 'Avg Yield Increase' },
-  { icon: Award,      value: 'AI',    label: 'Sarvam AI Voice' },
+  { icon: Users,      value: '2.8M+', label: 'Indian Farmers Empowered' },
+  { icon: Star,       value: '94.2%', label: 'Crop Recommendation Accuracy' },
+  { icon: TrendingUp, value: '+38%',  label: 'Average Harvest Yield Boost' },
+  { icon: Award,      value: '100% Free', label: 'Public Good for Bharat 🇮🇳' },
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab]     = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [currentLang, setCurrentLang] = useState('en');
+
+  // Persistent Theme State (defaults to saved or OS preference)
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('krishivaani-theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('krishivaani-theme', theme);
+    } catch (e) {
+      console.warn("Could not save theme preference:", e);
+    }
+  }, [theme]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
+      {/* ── Top Navigation with Theme Toggle & Drawer ── */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentLang={currentLang}
         setCurrentLang={setCurrentLang}
+        theme={theme}
+        setTheme={setTheme}
       />
 
       <main style={{ flex: 1 }}>
         {/* ══════════════════════════════════════
-             DASHBOARD / LANDING VIEW
+             LANDING / DASHBOARD HOME
         ══════════════════════════════════════ */}
         {activeTab === 'dashboard' && (
           <>
-            {/* ── HERO SECTION ── */}
-            <section style={{
-              background: 'linear-gradient(160deg, #f0f6eb 0%, #e8f0e0 40%, #f5f2eb 100%)',
-              borderBottom: '1px solid var(--border-color)',
-              overflow: 'hidden',
-              position: 'relative',
-            }}>
-              {/* Decorative blob */}
-              <div style={{
-                position: 'absolute', top: '-80px', right: '-80px',
-                width: '400px', height: '400px',
-                background: 'radial-gradient(circle, rgba(61,122,61,0.12) 0%, transparent 70%)',
-                borderRadius: '50%', pointerEvents: 'none',
-              }} />
-              <div style={{
-                position: 'absolute', bottom: '-60px', left: '10%',
-                width: '300px', height: '300px',
-                background: 'radial-gradient(circle, rgba(212,166,42,0.10) 0%, transparent 70%)',
-                borderRadius: '50%', pointerEvents: 'none',
-              }} />
+            {/* ── SECTION 1: AGRICULTURAL HERO SECTION ── */}
+            <section
+              style={{
+                position: 'relative',
+                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.heroLandscape, theme === 'dark' ? 0.90 : 0.82),
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'scroll',
+                borderBottom: '1px solid var(--border-glass)',
+                overflow: 'hidden',
+                padding: '4.5rem 0 4rem',
+              }}
+            >
+              {/* Subtle ambient light effects */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-120px',
+                  right: '5%',
+                  width: '500px',
+                  height: '500px',
+                  background: 'radial-gradient(circle, var(--green-glow) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                  pointerEvents: 'none',
+                  filter: 'blur(40px)',
+                  opacity: 0.6,
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '-80px',
+                  left: '10%',
+                  width: '400px',
+                  height: '400px',
+                  background: 'radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                  pointerEvents: 'none',
+                  filter: 'blur(50px)',
+                }}
+              />
 
-              <div className="container" style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)',
-                gap: '3rem',
-                alignItems: 'center',
-                padding: '5rem 1.5rem 4rem',
-              }}>
-                {/* Left: copy */}
-                <div className="animate-fade-in-up">
-                  <span className="badge badge-green" style={{ marginBottom: '1.25rem' }}>
-                    <Zap size={12} /> AI/ML Powered — Built for Bharat 🇮🇳
-                  </span>
-
-                  <h1 className="heading-xl" style={{ marginBottom: '1.25rem' }}>
-                    Smart Farming <br />
-                    <span style={{ color: 'var(--green-primary)' }}>for Every</span>{' '}
-                    <span style={{
-                      background: 'linear-gradient(135deg, #d4a62a, #a07040)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}>Indian Farmer</span>
-                  </h1>
-
-                  <p style={{
-                    fontSize: '1.05rem', color: 'var(--text-secondary)',
-                    marginBottom: '2rem', lineHeight: 1.75, maxWidth: '440px',
-                  }}>
-                    Get AI-powered crop recommendations, yield forecasts, satellite NDVI
-                    monitoring, leaf disease cures, and weather alerts — all in your language.
-                  </p>
-
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <button
-                      className="btn btn-primary btn-lg"
-                      onClick={() => setActiveTab('crop-rec')}
+              <div className="container">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '3rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  {/* Left Column: Headline, Bio & Primary CTAs */}
+                  <div className="animate-fade-in-up" style={{ zIndex: 2 }}>
+                    <div
+                      className="badge badge-green"
+                      style={{
+                        marginBottom: '1.25rem',
+                        backdropFilter: 'blur(10px)',
+                        padding: '0.45rem 1rem',
+                        fontSize: '0.85rem'
+                      }}
                     >
-                      <Sprout size={20} /> Start Crop Guide
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-lg"
-                      onClick={() => setActiveTab('chatbot')}
+                      <Sparkles size={14} color="var(--green-primary)" />
+                      <span>AI-Powered Precision Agriculture · Built for Bharat 🇮🇳</span>
+                    </div>
+
+                    <h1
+                      className="heading-xl"
+                      style={{
+                        marginBottom: '1.25rem',
+                        letterSpacing: '-0.025em',
+                      }}
                     >
-                      Chat with AI <ArrowRight size={18} />
-                    </button>
+                      Smart Farming <br />
+                      <span style={{ color: 'var(--green-primary)' }}>for Every</span>{' '}
+                      <span
+                        style={{
+                          background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 50%, #16a34a 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        Indian Farmer
+                      </span>
+                    </h1>
+
+                    <p
+                      style={{
+                        fontSize: '1.1rem',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '2.25rem',
+                        lineHeight: 1.75,
+                        maxWidth: '520px',
+                      }}
+                    >
+                      Empowering Indian agriculture with machine learning crop intelligence,
+                      satellite vegetation monitoring, ICAR soil diagnosis, and multilingual
+                      voice guidance — in English, हिन्दी, and ଓଡ଼ିଆ.
+                    </p>
+
+                    {/* CTAs */}
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button
+                        className="btn btn-primary btn-lg"
+                        onClick={() => setActiveTab('crop-rec')}
+                        style={{
+                          boxShadow: '0 8px 24px var(--green-glow)',
+                          padding: '0.95rem 2rem'
+                        }}
+                      >
+                        <Sprout size={20} />
+                        <span>Start Crop Guide</span>
+                      </button>
+
+                      <button
+                        className="btn btn-secondary btn-lg"
+                        onClick={() => setActiveTab('chatbot')}
+                        style={{
+                          background: 'var(--bg-surface-glass)',
+                          backdropFilter: 'blur(16px)',
+                          padding: '0.95rem 1.85rem'
+                        }}
+                      >
+                        <MessageSquare size={18} />
+                        <span>Talk with AI</span>
+                        <ArrowRight size={16} />
+                      </button>
+                    </div>
+
+                    {/* Trust indicators */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '1.5rem',
+                        marginTop: '2.5rem',
+                        flexWrap: 'wrap',
+                        paddingTop: '1.5rem',
+                        borderTop: '1px solid var(--border-glass)',
+                      }}
+                    >
+                      {[
+                        { label: 'ICAR Formulations', icon: ShieldCheck },
+                        { label: 'Multilingual Voice', icon: Sparkles },
+                        { label: 'Sentinel-2 Telemetry', icon: Satellite },
+                      ].map(({ label, icon: Icon }) => (
+                        <div
+                          key={label}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.45rem',
+                            fontSize: '0.85rem',
+                            color: 'var(--text-muted)',
+                            fontWeight: 500
+                          }}
+                        >
+                          <Icon size={16} color="var(--green-primary)" />
+                          <span>{label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Trust badges */}
-                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem', flexWrap: 'wrap' }}>
-                    {['Free to Use', 'Hindi & Odia', 'No Internet Required*'].map(t => (
-                      <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green-primary)' }} />
-                        {t}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: illustration */}
-                <div className="animate-float" style={{ position: 'relative' }}>
-                  {/* Decorative ring */}
-                  <div style={{
-                    position: 'absolute', inset: '-12px',
-                    borderRadius: 'var(--radius-xl)',
-                    border: '2px dashed rgba(61,122,61,0.2)',
-                    pointerEvents: 'none',
-                  }} />
-                  <img
-                    src="/hero_farm.jpg"
-                    alt="Indian farmer with lush fields"
+                  {/* Right Column: Havens-Inspired Visual Floating Glass Showcase */}
+                  <div
+                    className="animate-float"
                     style={{
-                      width: '100%',
-                      borderRadius: 'var(--radius-xl)',
-                      boxShadow: '0 20px 60px rgba(28,43,26,0.20)',
-                      border: '4px solid rgba(255,255,255,0.8)',
+                      position: 'relative',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      zIndex: 2,
                     }}
-                  />
-                  {/* Floating stat cards */}
-                  <div style={{
-                    position: 'absolute', bottom: '-18px', left: '-20px',
-                    background: '#ffffff',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.75rem 1.1rem',
-                    boxShadow: 'var(--shadow-md)',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  }}>
-                    <div style={{ width: 36, height: 36, background: 'var(--green-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <TrendingUp size={18} color="var(--green-primary)" />
+                  >
+                    {/* Primary Agricultural Card Container */}
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        maxWidth: '480px',
+                        borderRadius: 'var(--radius-xl)',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-glass)',
+                        border: '1.5px solid var(--border-glass)',
+                        background: 'var(--bg-surface-glass)',
+                      }}
+                    >
+                      <img
+                        src={AGRI_IMAGES.farmerField}
+                        alt="Indian progressive farmer examining healthy harvest crops"
+                        style={{
+                          width: '100%',
+                          height: '360px',
+                          objectFit: 'cover',
+                          display: 'block',
+                          filter: theme === 'dark' ? 'brightness(0.92) contrast(1.05)' : 'none',
+                        }}
+                      />
+
+                      {/* Image Bottom Glass Overlay Strip */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          padding: '1.25rem 1.5rem',
+                          background: 'linear-gradient(180deg, transparent 0%, rgba(7, 19, 15, 0.88) 100%)',
+                          color: '#ffffff',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-end',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: '0.78rem', color: '#6ee7b7', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Agro-Climatic Zone
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.15rem' }}>
+                            Precision Crop Matrix
+                          </div>
+                        </div>
+                        <span
+                          className="badge"
+                          style={{
+                            background: 'rgba(34, 197, 94, 0.25)',
+                            color: '#6ee7b7',
+                            border: '1px solid rgba(110, 231, 183, 0.4)',
+                            backdropFilter: 'blur(8px)',
+                          }}
+                        >
+                          ● Live Connected
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', color: 'var(--green-primary)' }}>+38%</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Avg Yield Boost</div>
+
+                    {/* Floating Glass Widget 1: Real-time Agro Weather Card */}
+                    <div
+                      className="card-glass"
+                      style={{
+                        position: 'absolute',
+                        top: '-24px',
+                        right: '-16px',
+                        padding: '0.9rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border-glass)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.85rem',
+                        backdropFilter: 'blur(20px)',
+                        zIndex: 3,
+                        maxWidth: '220px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '10px',
+                          background: 'rgba(234, 179, 8, 0.18)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <CloudSun size={22} color="var(--gold)" />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+                          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                            28°C
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--green-primary)', fontWeight: 600 }}>
+                            Good Sowing
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          💧 64% Humidity · 12mm Rain
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{
-                    position: 'absolute', top: '-18px', right: '-16px',
-                    background: '#ffffff',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.75rem 1.1rem',
-                    boxShadow: 'var(--shadow-md)',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  }}>
-                    <div style={{ width: 36, height: 36, background: 'var(--gold-pale)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Star size={18} color="var(--gold)" fill="var(--gold)" />
-                    </div>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', color: '#9a6e0a' }}>4.9★</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Farmer Rating</div>
+
+                    {/* Floating Glass Widget 2: AI Recommended Crop Card */}
+                    <div
+                      className="card-glass"
+                      style={{
+                        position: 'absolute',
+                        bottom: '-24px',
+                        left: '-20px',
+                        padding: '1rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border-glass)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.9rem',
+                        backdropFilter: 'blur(20px)',
+                        zIndex: 3,
+                        maxWidth: '260px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '12px',
+                          background: 'var(--green-bg)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid var(--green-pale)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <TrendingUp size={22} color="var(--green-primary)" />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.15rem', color: 'var(--green-primary)' }}>
+                            +38% Yield
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            Forecast
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          🌾 Basmati Rice · 94% Suitability
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Responsive: stack on mobile */}
-              <style>{`
-                @media (max-width: 780px) {
-                  .hero-grid { grid-template-columns: 1fr !important; }
-                }
-              `}</style>
             </section>
 
-            {/* ── STATS BAR ── */}
-            <section style={{ background: 'var(--bg-dark)', padding: '1.5rem 0' }}>
-              <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
-                {STATS.map(({ icon: Icon, value, label }) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.5rem 1rem' }}>
-                    <div style={{ width: 42, height: 42, background: 'rgba(255,255,255,0.08)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={20} color="#d4e8c2" />
+            {/* ── STATS BAR (Glassmorphic) ── */}
+            <section
+              style={{
+                background: 'var(--bg-section)',
+                borderBottom: '1px solid var(--border-glass)',
+                padding: '1.75rem 0',
+              }}
+            >
+              <div className="container">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '1.5rem',
+                  }}
+                >
+                  {STATS.map(({ icon: Icon, value, label }) => (
+                    <div
+                      key={label}
+                      className="card-glass"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.9rem',
+                        padding: '0.9rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-glass)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '12px',
+                          background: 'var(--green-bg)',
+                          border: '1px solid var(--green-pale)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon size={22} color="var(--green-primary)" />
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-heading)',
+                            fontSize: '1.35rem',
+                            fontWeight: 800,
+                            color: 'var(--text-primary)',
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          {value}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '0.2rem' }}>
+                          {label}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 700, color: '#d4e8c2' }}>{value}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{label}</div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </section>
 
-            {/* ── FEATURES GRID ── */}
+            {/* ── SECTION 2: CORE CAPABILITIES (Glass Cards Grid) ── */}
             <section style={{ padding: '5rem 0 4rem', background: 'var(--bg-main)' }}>
               <div className="container">
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                  <span className="section-label" style={{ justifyContent: 'center' }}>Our Features</span>
-                  <h2 className="heading-lg" style={{ marginBottom: '0.75rem' }}>
-                    Everything a Farmer Needs,<br />in One Platform
+                <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+                  <span className="section-label" style={{ justifyContent: 'center' }}>
+                    Agricultural Intelligence Suite
+                  </span>
+                  <h2 className="heading-lg" style={{ marginBottom: '0.85rem' }}>
+                    Everything a Progressive Farmer Needs, in One Place
                   </h2>
-                  <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto', fontSize: '1rem' }}>
-                    Powered by machine learning, satellite imagery, and government data — available in your native language.
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '560px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.7 }}>
+                    Precision agronomy powered by Machine Learning, Sentinel-2 satellite telemetry,
+                    and ICAR agricultural research data — tailored for Indian farms.
                   </p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-                  {FEATURES.map(({ id, icon: Icon, color, title, desc, stat, statLabel }, i) => {
-                    const c = ICON_COLOR_MAP[color];
-                    return (
-                      <div
-                        key={id}
-                        className="card animate-fade-in-up"
-                        style={{ cursor: 'pointer', animationDelay: `${i * 0.08}s`, opacity: 0 }}
-                        onClick={() => setActiveTab(id)}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                          <div style={{ width: 52, height: 52, borderRadius: '12px', background: c.bg, border: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Icon size={24} color={c.color} />
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '1.5rem',
+                  }}
+                >
+                  {FEATURES.map(({ id, icon: Icon, tag, title, desc, stat, statLabel, accent }, i) => (
+                    <div
+                      key={id}
+                      className="card-glass animate-fade-in-up"
+                      onClick={() => setActiveTab(id)}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '1.75rem',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-glass)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                        animationDelay: `${i * 0.05}s`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.borderColor = 'var(--green-pale)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.borderColor = 'var(--border-glass)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-card)';
+                      }}
+                    >
+                      {/* Top Row: Icon + Stat Badge */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
+                          <div
+                            style={{
+                              width: 52,
+                              height: 52,
+                              borderRadius: '14px',
+                              background: 'var(--green-bg)',
+                              border: '1px solid var(--green-pale)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Icon size={24} color={accent || 'var(--green-primary)'} />
                           </div>
+
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', color: c.color }}>{stat}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{statLabel}</div>
+                            <span
+                              className="badge"
+                              style={{
+                                background: 'var(--bg-surface-glass)',
+                                border: '1px solid var(--border-glass)',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {tag}
+                            </span>
                           </div>
                         </div>
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>{title}</h3>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '1.25rem' }}>{desc}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: 600, color: c.color }}>
-                          Open Tool <ChevronRight size={16} />
+
+                        <h3
+                          style={{
+                            fontFamily: 'var(--font-heading)',
+                            fontSize: '1.2rem',
+                            fontWeight: 700,
+                            marginBottom: '0.6rem',
+                            color: 'var(--text-primary)',
+                          }}
+                        >
+                          {title}
+                        </h3>
+
+                        <p
+                          style={{
+                            fontSize: '0.9rem',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.65,
+                            marginBottom: '1.5rem',
+                          }}
+                        >
+                          {desc}
+                        </p>
+                      </div>
+
+                      {/* Bottom Row: Stat metric + Launch action */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: '1rem',
+                          borderTop: '1px solid var(--border-glass)',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem', color: accent }}>
+                            {stat}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {statLabel}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            fontSize: '0.88rem',
+                            fontWeight: 700,
+                            color: 'var(--green-primary)',
+                          }}
+                        >
+                          <span>Open Tool</span>
+                          <ChevronRight size={16} />
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
 
-            {/* ── WEATHER QUICK OVERVIEW ── */}
-            <section style={{ padding: '0 0 4rem', background: 'var(--bg-section)' }}>
+            {/* ── SECTION 3: AI + AGRICULTURE PIPELINE (Havens Visual Flow) ── */}
+            <section
+              style={{
+                padding: '5rem 0',
+                background: 'var(--bg-section)',
+                borderTop: '1px solid var(--border-glass)',
+                borderBottom: '1px solid var(--border-glass)',
+                position: 'relative',
+              }}
+            >
               <div className="container">
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <span className="section-label">Live Data</span>
-                  <h2 className="heading-md">Weather Advisory</h2>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '3.5rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  {/* Left Column: Visual Data Pipeline */}
+                  <div>
+                    <span className="section-label">Intelligent Decision Architecture</span>
+                    <h2 className="heading-lg" style={{ marginBottom: '1.25rem' }}>
+                      How KrishiVaani Synthesizes Agro-Data into Decisions
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '2rem' }}>
+                      Raw agricultural variables are transformed into profitable field actions.
+                      We combine soil chemistry, satellite indices, and climate models through our
+                      multi-parameter ML engine.
+                    </p>
+
+                    {/* Step-by-Step Interactive Flow Cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                      {[
+                        {
+                          step: '01',
+                          title: 'Soil Chemistry (N-P-K & pH)',
+                          desc: 'Laboratory test values or district averages for Nitrogen, Phosphorus, Potassium, and soil acidity.',
+                          icon: FlaskConical,
+                        },
+                        {
+                          step: '02',
+                          title: 'Hyperlocal IMD Climate & Rainfall',
+                          desc: 'Real-time temperature, relative humidity, and precipitation predictions.',
+                          icon: CloudSun,
+                        },
+                        {
+                          step: '03',
+                          title: 'Sentinel-2 Satellite Vegetation Index',
+                          desc: '10-meter resolution NDVI scans tracking real-time plant vigor and crop water stress.',
+                          icon: Satellite,
+                        },
+                        {
+                          step: '04',
+                          title: 'Random Forest & XGBoost ML Inference',
+                          desc: 'Trained on 2,200+ verified Indian agro-climatic records to deliver high-yield crop and fertilizer advisory.',
+                          icon: Cpu,
+                        },
+                      ].map(({ step, title, desc, icon: Icon }) => (
+                        <div
+                          key={step}
+                          className="card-glass"
+                          style={{
+                            display: 'flex',
+                            gap: '1rem',
+                            padding: '1rem 1.25rem',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border-glass)',
+                            alignItems: 'flex-start',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: '10px',
+                              background: 'var(--green-bg)',
+                              border: '1px solid var(--green-pale)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Icon size={18} color="var(--green-primary)" />
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--green-primary)', letterSpacing: '0.04em' }}>
+                                STEP {step}
+                              </span>
+                              <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--border-glass)' }} />
+                              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                {title}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                              {desc}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right Column: High-Res Agricultural Visual Card with Floating Elements */}
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        borderRadius: 'var(--radius-xl)',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-glass)',
+                        border: '1.5px solid var(--border-glass)',
+                        position: 'relative',
+                      }}
+                    >
+                      <img
+                        src={AGRI_IMAGES.agriTech}
+                        alt="High tech agriculture with precision sensors and crops"
+                        style={{
+                          width: '100%',
+                          height: '480px',
+                          objectFit: 'cover',
+                          display: 'block',
+                          filter: theme === 'dark' ? 'brightness(0.9) contrast(1.05)' : 'none',
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'linear-gradient(180deg, transparent 50%, rgba(7, 19, 15, 0.92) 100%)',
+                        }}
+                      />
+
+                      {/* Glass overlay decision summary */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '1.5rem',
+                          left: '1.5rem',
+                          right: '1.5rem',
+                          padding: '1.25rem',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--bg-surface-glass-heavy)',
+                          backdropFilter: 'blur(20px)',
+                          border: '1px solid var(--border-glass)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                          <CheckCircle2 size={18} color="var(--green-primary)" />
+                          <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                            Personalized Agronomic Decision
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                          Instant crop advisory with optimal sowing depth, fertilizer doses, expected harvest MSP, and disease resistance profile.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <WeatherWidget compact />
               </div>
             </section>
 
-            {/* ── CTA BANNER ── */}
-            <section style={{
-              background: 'var(--bg-dark)',
-              padding: '4rem 0',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                position: 'absolute', top: '-100px', right: '-100px',
-                width: '350px', height: '350px',
-                background: 'radial-gradient(circle, rgba(61,122,61,0.3) 0%, transparent 70%)',
-                borderRadius: '50%',
-              }} />
-              <div className="container" style={{ textAlign: 'center', position: 'relative' }}>
-                <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', color: '#d4e8c2', border: '1px solid rgba(255,255,255,0.15)', marginBottom: '1.25rem' }}>
-                  🌾 Get Started Today — It's Free
-                </span>
-                <h2 className="heading-lg" style={{ color: '#ffffff', marginBottom: '1rem' }}>
-                  Grow Smarter with<br />
-                  <span style={{ color: '#d4e8c2' }}>KrishiVaani AI</span>
-                </h2>
-                <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '2rem', maxWidth: '440px', margin: '0 auto 2rem', fontSize: '1rem' }}>
-                  Join millions of Indian farmers already using AI precision agriculture to boost yields and income.
-                </p>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button className="btn btn-gold btn-lg" onClick={() => setActiveTab('crop-rec')}>
-                    <Sprout size={20} /> Try Crop Recommendation
+            {/* ── SECTION 4: 3-YEAR SUSTAINABLE CROP PLANNING SHOWCASE ── */}
+            <section style={{ padding: '5rem 0', background: 'var(--bg-main)' }}>
+              <div className="container">
+                <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+                  <span className="section-label" style={{ justifyContent: 'center' }}>
+                    Soil Regeneration Strategy
+                  </span>
+                  <h2 className="heading-lg" style={{ marginBottom: '0.85rem' }}>
+                    Scientific 3-Year Crop Rotation Architecture
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '580px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.7 }}>
+                    Monocropping depletes specific micronutrients and builds fungal reservoirs.
+                    Our 3-year agronomic sequence naturally rebalances soil Nitrogen, breaks pest cycles,
+                    and improves organic carbon.
+                  </p>
+                </div>
+
+                {/* 3-Year Visual Connected Sequence */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                    gap: '1.75rem',
+                    position: 'relative',
+                  }}
+                >
+                  {[
+                    {
+                      year: 'Year 1',
+                      tag: 'High Revenue / Heavy Feeder',
+                      crop: '🌾 Paddy (Rice) / Maize',
+                      desc: 'Primary economic harvest. Demands high nitrogen and soil moisture. Generates substantial seasonal farmer income.',
+                      benefit: 'Maximizes immediate revenue under optimal monsoon rainfall.',
+                      color: 'var(--green-primary)',
+                    },
+                    {
+                      year: 'Year 2',
+                      tag: 'Soil Restorer / Leguminous',
+                      crop: '🫘 Chickpea (Gram) / Moong',
+                      desc: 'Rhizobium bacteria in legume root nodules fix 40–60 kg atmospheric Nitrogen/hectare into the root zone without chemical fertilizer.',
+                      benefit: 'Restores nitrogen reserves & halves subsequent fertilizer expense.',
+                      color: 'var(--gold)',
+                    },
+                    {
+                      year: 'Year 3',
+                      tag: 'Pest Breaker / Deep Root',
+                      crop: '🌻 Mustard / Wheat / Millets',
+                      desc: 'Deep taproot systems draw sub-soil minerals to the surface, breaking cereal pest life-cycles and restoring mycorrhizal fungal webs.',
+                      benefit: 'Breaks fungal blight cycles & improves soil organic carbon.',
+                      color: '#8b5cf6',
+                    },
+                  ].map(({ year, tag, crop, desc, benefit, color }) => (
+                    <div
+                      key={year}
+                      className="card-glass"
+                      style={{
+                        padding: '1.85rem',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-glass)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        position: 'relative',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-heading)',
+                              fontWeight: 800,
+                              fontSize: '1.35rem',
+                              color: color,
+                            }}
+                          >
+                            {year}
+                          </span>
+                          <span
+                            className="badge"
+                            style={{
+                              background: 'var(--bg-surface-glass)',
+                              border: '1px solid var(--border-glass)',
+                              fontSize: '0.72rem',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        </div>
+
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.65rem', color: 'var(--text-primary)' }}>
+                          {crop}
+                        </h3>
+
+                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '1.25rem' }}>
+                          {desc}
+                        </p>
+                      </div>
+
+                      <div
+                        style={{
+                          padding: '0.85rem 1rem',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--green-bg)',
+                          border: '1px solid var(--green-pale)',
+                          fontSize: '0.8rem',
+                          color: 'var(--green-primary)',
+                          fontWeight: 600,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        ✓ {benefit}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Direct Action Trigger */}
+                <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+                  <button
+                    className="btn btn-secondary btn-lg"
+                    onClick={() => setActiveTab('rotation')}
+                    style={{
+                      padding: '0.85rem 2rem',
+                      background: 'var(--bg-surface-glass)',
+                      backdropFilter: 'blur(16px)',
+                    }}
+                  >
+                    <RefreshCw size={18} />
+                    <span>Launch 3-Year Rotation Planner</span>
+                    <ArrowRight size={16} />
                   </button>
+                </div>
+              </div>
+            </section>
+
+            {/* ── SECTION 5: COMPUTER VISION LEAF DISEASE FLOW ── */}
+            <section
+              style={{
+                padding: '5rem 0',
+                background: 'var(--bg-section)',
+                borderTop: '1px solid var(--border-glass)',
+                borderBottom: '1px solid var(--border-glass)',
+              }}
+            >
+              <div className="container">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '3.5rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  {/* Left Column: Leaf Photo Visual with Glass Diagnostic Badge */}
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        borderRadius: 'var(--radius-xl)',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-glass)',
+                        border: '1.5px solid var(--border-glass)',
+                      }}
+                    >
+                      <img
+                        src={AGRI_IMAGES.healthyLeaf}
+                        alt="High resolution leaf showing cellular structure for computer vision diagnostic"
+                        style={{
+                          width: '100%',
+                          height: '420px',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    </div>
+
+                    {/* Floating Glass Result Card */}
+                    <div
+                      className="card-glass"
+                      style={{
+                        position: 'absolute',
+                        bottom: '-20px',
+                        right: '-16px',
+                        padding: '1.1rem 1.4rem',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid var(--border-glass)',
+                        backdropFilter: 'blur(20px)',
+                        maxWidth: '280px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                        <Leaf size={18} color="var(--green-primary)" />
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                          38+ Pathologies Identified
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        Detects Early Blight, Powdery Mildew, Leaf Rust, and Bacterial Spot with instant organic cures.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Diagnostic Pipeline Description */}
+                  <div>
+                    <span className="section-label">Computer Vision AI Scanner</span>
+                    <h2 className="heading-lg" style={{ marginBottom: '1.25rem' }}>
+                      Instant Crop Disease Identification from a Leaf Photo
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '2rem' }}>
+                      Pest and disease attacks ruin up to 25% of annual harvest in India.
+                      Snap a photo using your smartphone or upload an image to receive instant diagnosis
+                      and certified bio-pesticide treatment recommendations.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '2.25rem' }}>
+                      {[
+                        'Upload or capture leaf photo with visible spot or discoloration',
+                        'Deep Convolutional Neural Network analyzes lesion morphology',
+                        'Receive certified diagnosis with confidence percentage',
+                        'Get immediate chemical dosage + organic neem oil treatment options',
+                      ].map((step, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              background: 'var(--green-bg)',
+                              border: '1px solid var(--green-pale)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              color: 'var(--green-primary)',
+                            }}
+                          >
+                            {idx + 1}
+                          </div>
+                          <span style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                            {step}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      className="btn btn-primary btn-lg"
+                      onClick={() => setActiveTab('disease')}
+                      style={{ boxShadow: '0 8px 24px var(--green-glow)' }}
+                    >
+                      <Leaf size={20} />
+                      <span>Launch Leaf Disease Scanner</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── SECTION 6: LIVE WEATHER & ADVISORY SECTION ── */}
+            <section
+              style={{
+                padding: '4.5rem 0',
+                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.weatherLandscape, theme === 'dark' ? 0.94 : 0.88),
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                position: 'relative',
+              }}
+            >
+              <div className="container">
+                <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <span className="section-label">Atmospheric Telemetry</span>
+                    <h2 className="heading-lg" style={{ color: 'var(--text-primary)' }}>
+                      Hyperlocal Weather & Severe Climate Warnings
+                    </h2>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setActiveTab('weather')}
+                    style={{ background: 'var(--bg-surface-glass)', backdropFilter: 'blur(12px)' }}
+                  >
+                    <span>Full Weather Forecast</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+
+                {/* Embedded compact weather widget */}
+                <div className="card-glass" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
+                  <WeatherWidget compact />
+                </div>
+              </div>
+            </section>
+
+            {/* ── SECTION 7: CTA BANNER (Deep Forest Glass) ── */}
+            <section
+              style={{
+                background: 'linear-gradient(135deg, #07130F 0%, #0d281e 50%, #07130F 100%)',
+                padding: '4.5rem 0',
+                position: 'relative',
+                overflow: 'hidden',
+                borderTop: '1px solid var(--border-glass)',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-100px',
+                  right: '-100px',
+                  width: '400px',
+                  height: '400px',
+                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.25) 0%, transparent 70%)',
+                  borderRadius: '50%',
+                }}
+              />
+
+              <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+                <span
+                  className="badge"
+                  style={{
+                    background: 'rgba(34, 197, 94, 0.2)',
+                    color: '#6ee7b7',
+                    border: '1px solid rgba(110, 231, 183, 0.3)',
+                    marginBottom: '1.25rem',
+                    padding: '0.4rem 1rem',
+                  }}
+                >
+                  🌾 100% Free Public Good for Bharat's Farmers
+                </span>
+
+                <h2 className="heading-lg" style={{ color: '#ffffff', marginBottom: '1.1rem' }}>
+                  Cultivate with Certainty. <br />
+                  <span style={{ color: '#6ee7b7' }}>Harness AI for Your Next Harvest.</span>
+                </h2>
+
+                <p
+                  style={{
+                    color: 'rgba(240, 247, 243, 0.75)',
+                    marginBottom: '2.25rem',
+                    maxWidth: '520px',
+                    margin: '0 auto 2.25rem',
+                    fontSize: '1.05rem',
+                    lineHeight: 1.7,
+                  }}
+                >
+                  Join millions of Indian farmers using data science, satellite indices, and
+                  multilingual AI assistance to maximize profits and preserve their land.
+                </p>
+
+                <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={() => setActiveTab('crop-rec')}
+                    style={{
+                      background: 'var(--green-primary)',
+                      boxShadow: '0 8px 24px var(--green-glow)',
+                    }}
+                  >
+                    <Sprout size={20} />
+                    <span>Try Crop Recommendation</span>
+                  </button>
+
                   <button
                     className="btn btn-lg"
-                    style={{ background: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      backdropFilter: 'blur(12px)',
+                    }}
                     onClick={() => setActiveTab('chatbot')}
                   >
-                    <MessageSquare size={18} /> Talk to AI Assistant
+                    <MessageSquare size={18} />
+                    <span>Talk with AI Assistant</span>
                   </button>
                 </div>
               </div>
@@ -373,7 +1273,7 @@ export default function App() {
         )}
 
         {/* ══════════════════════════════════════
-             INDIVIDUAL FEATURE TABS
+             INDIVIDUAL FEATURE MODULE TABS
         ══════════════════════════════════════ */}
         {activeTab !== 'dashboard' && (
           <div style={{ padding: '2rem 0 3.5rem' }}>
@@ -393,50 +1293,155 @@ export default function App() {
         )}
       </main>
 
-      {/* ── FOOTER ── */}
-      <footer style={{
-        background: 'var(--bg-dark)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '2.5rem 0 1.5rem',
-        color: 'rgba(255,255,255,0.5)',
-        fontSize: '0.875rem',
-      }}>
+      {/* ── FOOTER (Glassmorphic & Themed) ── */}
+      <footer
+        style={{
+          background: 'var(--bg-dark)',
+          borderTop: '1px solid var(--border-glass)',
+          padding: '3rem 0 2rem',
+          color: 'var(--text-muted)',
+          fontSize: '0.875rem',
+        }}
+      >
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '2.5rem',
+              marginBottom: '2.5rem',
+            }}
+          >
+            {/* Column 1: Brand & Mission */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: 34, height: 34, background: 'var(--green-primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sprout size={18} color="#fff" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    background: 'linear-gradient(135deg, var(--green-primary) 0%, var(--green-light) 100%)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Sprout size={20} color="#fff" />
                 </div>
-                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', color: '#d4e8c2' }}>KrishiVaani</span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 800,
+                    fontSize: '1.25rem',
+                    color: 'var(--text-light)',
+                  }}
+                >
+                  KrishiVaani
+                </span>
               </div>
-              <p style={{ lineHeight: 1.7, maxWidth: '220px' }}>AI-powered precision agriculture platform built for India's 140 million farmers.</p>
+              <p style={{ lineHeight: 1.7, maxWidth: '260px', color: 'rgba(255,255,255,0.65)' }}>
+                AI-powered precision agriculture platform built to empower India's 140 million farmers
+                with scientific guidance, satellite telemetry, and real-time market intelligence.
+              </p>
             </div>
+
+            {/* Column 2: Platform Modules */}
             <div>
-              <div style={{ color: '#d4e8c2', fontWeight: 600, marginBottom: '0.75rem' }}>Features</div>
-              {['Crop Recommendation', 'Yield Calculator', 'Leaf Disease Scanner', 'Satellite NDVI', 'Weather Alerts'].map(f => (
-                <div key={f} style={{ marginBottom: '0.4rem' }}>{f}</div>
+              <div style={{ color: 'var(--text-light)', fontWeight: 700, marginBottom: '0.9rem', fontSize: '0.95rem' }}>
+                Precision Tools
+              </div>
+              {[
+                { label: 'Crop Recommendation', id: 'crop-rec' },
+                { label: 'Yield & MSP Forecast', id: 'yield' },
+                { label: 'Leaf Disease Scanner', id: 'disease' },
+                { label: 'Satellite NDVI Health', id: 'satellite' },
+                { label: '3-Year Crop Rotation', id: 'rotation' },
+              ].map(f => (
+                <div
+                  key={f.id}
+                  onClick={() => { setActiveTab(f.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  style={{
+                    marginBottom: '0.5rem',
+                    cursor: 'pointer',
+                    transition: 'color 0.2s',
+                    color: 'rgba(255,255,255,0.65)'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--green-light)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.65)'}
+                >
+                  {f.label}
+                </div>
               ))}
             </div>
+
+            {/* Column 3: Tech Architecture */}
             <div>
-              <div style={{ color: '#d4e8c2', fontWeight: 600, marginBottom: '0.75rem' }}>Technology</div>
-              {['FastAPI Backend', 'React Frontend', 'MongoDB Database', 'XGBoost ML', 'Sarvam AI Voice'].map(t => (
-                <div key={t} style={{ marginBottom: '0.4rem' }}>{t}</div>
+              <div style={{ color: 'var(--text-light)', fontWeight: 700, marginBottom: '0.9rem', fontSize: '0.95rem' }}>
+                Technology Stack
+              </div>
+              {[
+                'FastAPI Python Backend',
+                'Random Forest & XGBoost ML',
+                'Sentinel-2 Multi-Spectral',
+                'LangChain + RAG Pipeline',
+                'Sarvam AI Voice TTS/STT',
+              ].map(t => (
+                <div key={t} style={{ marginBottom: '0.5rem', color: 'rgba(255,255,255,0.65)' }}>
+                  {t}
+                </div>
               ))}
             </div>
+
+            {/* Column 4: Supported Languages */}
             <div>
-              <div style={{ color: '#d4e8c2', fontWeight: 600, marginBottom: '0.75rem' }}>Languages</div>
-              {['English', 'हिन्दी (Hindi)', 'ଓଡ଼ିଆ (Odia)'].map(l => (
-                <div key={l} style={{ marginBottom: '0.4rem' }}>{l}</div>
+              <div style={{ color: 'var(--text-light)', fontWeight: 700, marginBottom: '0.9rem', fontSize: '0.95rem' }}>
+                Languages Supported
+              </div>
+              {[
+                'English (Standard Agronomy)',
+                'हिन्दी (Hindi - Voice & Text)',
+                'ଓଡ଼ିଆ (Odia - Voice & Text)',
+              ].map(l => (
+                <div key={l} style={{ marginBottom: '0.5rem', color: 'rgba(255,255,255,0.65)' }}>
+                  {l}
+                </div>
               ))}
-              <div style={{ marginTop: '1rem', padding: '0.5rem 0.85rem', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', display: 'inline-block', fontSize: '0.78rem', color: '#a0c890' }}>
-                🇮🇳 Made for Bharat
+              <div
+                style={{
+                  marginTop: '1.25rem',
+                  padding: '0.55rem 0.95rem',
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: 'var(--radius-pill)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.82rem',
+                  color: '#6ee7b7',
+                  fontWeight: 600,
+                }}
+              >
+                <span>🇮🇳</span>
+                <span>Crafted for Bharat's Agricultural Future</span>
               </div>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <span>© 2025 KrishiVaani — AI Smart Farming Platform</span>
-            <span>Built with FastAPI · React · MongoDB · XGBoost · Sarvam AI · Sentinel-2</span>
+
+          {/* Copyright & Disclaimer Bar */}
+          <div
+            style={{
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              paddingTop: '1.5rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              color: 'rgba(255,255,255,0.45)',
+              fontSize: '0.82rem',
+            }}
+          >
+            <span>© 2025 KrishiVaani — AI Smart Agriculture Platform</span>
+            <span>Calibrated with ICAR, IMD, & Sentinel-2 Earth Observation Datasets</span>
           </div>
         </div>
       </footer>
