@@ -61,6 +61,10 @@ class DiseaseDetectionResponse(BaseModel):
     treatment: Optional[str] = None
     organic: Optional[str] = None
 
+    # Agricultural RAG & Grounded Evidence
+    rag_citations: Optional[List[Dict[str, Any]]] = None
+    llm_grounded_guidance: Optional[str] = None
+
 class DiseaseAdviceRequest(BaseModel):
     crop: str
     condition: str

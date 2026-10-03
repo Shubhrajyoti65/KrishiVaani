@@ -25,7 +25,36 @@ router = APIRouter(
 )
 async def predict_crop(request: CropRecommendationRequest) -> CropRecommendationResponse:
     try:
+        weather_info = None
+        if request.use_live_weather and (request.state or request.district or request.latitude is not None):
+            try:
+                from backend.app.services.weather_service.service import weather_service
+                from backend.app.services.weather_service.schema import WeatherQuery
+                loc_st = request.state or "Punjab"
+                loc_dist = request.district or loc_st
+                wq = WeatherQuery(
+                    state=loc_st,
+                    district=loc_dist,
+                    latitude=request.latitude,
+                    longitude=request.longitude
+                )
+                adv = await weather_service.get_weather_advisory(wq)
+                if adv and adv.current:
+                    request.temperature = adv.current.temperature_celsius
+                    request.humidity = adv.current.humidity_percent
+                    weather_info = {
+                        "location": f"{adv.location.district}, {adv.location.state}",
+                        "live_temperature": adv.current.temperature_celsius,
+                        "live_humidity": adv.current.humidity_percent,
+                        "condition": adv.current.weather_description,
+                        "alerts": [a.headline for a in adv.active_alerts] if adv.active_alerts else []
+                    }
+            except Exception:
+                pass
+
         recommendation = crop_engine.predict(request)
+        if weather_info:
+            recommendation.weather_context = weather_info
         return recommendation
     except Exception as e:
         raise HTTPException(

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from backend.app.db.session import db_manager
 from backend.app.services.farmer_profile.schema import (
@@ -20,7 +20,7 @@ class FarmerRepository:
     
     async def create_farmer(self, farmer_in: FarmerProfileCreate) -> FarmerProfileResponse:
         farmer_id = f"f_{uuid.uuid4().hex[:12]}"
-        now_str = datetime.utcnow().isoformat()
+        now_str = datetime.now(timezone.utc).isoformat()
         
         farmer_doc = {
             "id": farmer_id,
@@ -76,7 +76,7 @@ class FarmerRepository:
         if not update_data:
             return farmer
 
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
         if db_manager.is_connected:
             await db_manager.db["farmers"].update_one(
@@ -92,7 +92,7 @@ class FarmerRepository:
 
     async def add_soil_test(self, farmer_id: str, test_in: SoilTestRecordCreate) -> SoilTestRecordResponse:
         test_id = f"st_{uuid.uuid4().hex[:12]}"
-        now_str = datetime.utcnow().isoformat()
+        now_str = datetime.now(timezone.utc).isoformat()
 
         soil_doc = {
             "id": test_id,
@@ -129,7 +129,7 @@ class FarmerRepository:
 
     async def add_farm_history_record(self, farmer_id: str, rec_in: FarmHistoryRecordCreate) -> FarmHistoryRecordResponse:
         rec_id = f"fh_{uuid.uuid4().hex[:12]}"
-        now_str = datetime.utcnow().isoformat()
+        now_str = datetime.now(timezone.utc).isoformat()
         yield_per_acre = round(rec_in.yield_obtained_quintals / max(0.1, rec_in.area_acres), 2)
 
         doc = {
