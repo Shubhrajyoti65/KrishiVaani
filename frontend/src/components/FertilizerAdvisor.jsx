@@ -373,10 +373,10 @@ export default function FertilizerAdvisor({ onBack }) {
               { label: 'DAP (18% N + 46% P)', value: result.recommended_doses?.dap_kg_per_acre, bags: Math.round(((result.recommended_doses?.dap_kg_per_acre || 0) * Number(areaAcres)) / 50), unit: 'kg/acre', color: 'var(--green-primary)', bg: '#f0fdf4' },
               { label: 'MOP (60% K₂O)', value: result.recommended_doses?.mop_kg_per_acre, bags: Math.round(((result.recommended_doses?.mop_kg_per_acre || 0) * Number(areaAcres)) / 50), unit: 'kg/acre', color: 'var(--brown)', bg: '#faf5ee' },
             ].map(({ label, value, bags, unit, color, bg }) => (
-              <div key={label} className="card" style={{ padding: '1.5rem', background: '#ffffff', border: '1px solid var(--border-color)', borderTop: `4px solid ${color}` }}>
+              <div key={label} className="card-glass" style={{ padding: '1.5rem', background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderTop: `4px solid ${color}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem' }}>{label}</div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.15rem 0.5rem', borderRadius: '4px', background: bg, color }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-pill)', background: 'var(--bg-surface-glass)', border: '1px solid var(--border-glass)', color }}>
                     {bags > 0 ? `~${bags} Bags Total` : 'Dose Calc'}
                   </span>
                 </div>
@@ -391,7 +391,7 @@ export default function FertilizerAdvisor({ onBack }) {
           {/* Advisory Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
             {/* Application Schedule */}
-            <div className="card" style={{ borderLeft: '4px solid var(--green-primary)', background: '#ffffff' }}>
+            <div className="card-glass" style={{ borderLeft: '4px solid var(--green-primary)', background: 'var(--bg-card)', padding: '1.5rem' }}>
               <div style={{ fontWeight: 700, color: 'var(--green-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}>
                 📅 Fertilizer Application Schedule
               </div>
@@ -401,8 +401,8 @@ export default function FertilizerAdvisor({ onBack }) {
             </div>
 
             {/* Organic Supplements */}
-            <div className="card" style={{ borderLeft: '4px solid var(--gold)', background: '#ffffff' }}>
-              <div style={{ fontWeight: 700, color: '#9a6e0a', fontSize: '1rem', marginBottom: '0.5rem' }}>
+            <div className="card-glass" style={{ borderLeft: '4px solid var(--gold)', background: 'var(--bg-card)', padding: '1.5rem' }}>
+              <div style={{ fontWeight: 700, color: 'var(--gold)', fontSize: '1rem', marginBottom: '0.5rem' }}>
                 🌿 Organic & Bio-Fertilizer Supplements
               </div>
               {(result.organic_supplements || []).map((s, i) => (
@@ -414,12 +414,12 @@ export default function FertilizerAdvisor({ onBack }) {
 
             {/* Deficiency Symptoms */}
             {result.deficiency_symptoms?.length > 0 && (
-              <div className="card" style={{ borderLeft: '4px solid #c04a30', background: '#fef2f2' }}>
-                <div style={{ fontWeight: 700, color: '#c04a30', fontSize: '1rem', marginBottom: '0.5rem' }}>
+              <div className="card-glass" style={{ borderLeft: '4px solid #ef4444', background: 'var(--bg-card)', padding: '1.5rem' }}>
+                <div style={{ fontWeight: 700, color: '#ef4444', fontSize: '1rem', marginBottom: '0.5rem' }}>
                   ⚠️ Deficiency Symptoms to Watch For
                 </div>
                 {result.deficiency_symptoms.map((s, i) => (
-                  <div key={i} style={{ fontSize: '0.86rem', color: '#991b1b', marginBottom: '0.35rem', lineHeight: 1.5 }}>
+                  <div key={i} style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginBottom: '0.35rem', lineHeight: 1.5 }}>
                     • {s}
                   </div>
                 ))}

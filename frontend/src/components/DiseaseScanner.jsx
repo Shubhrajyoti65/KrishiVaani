@@ -3,10 +3,10 @@ import { Leaf, Upload, Camera, CheckCircle, AlertCircle, Loader, FlaskConical, S
 import { logCropToFarmHistory } from '../utils/farmHistoryService';
 
 const SEV_COLOR = {
-  None:     { bg: 'var(--green-bg)',  border: 'var(--green-pale)',  text: 'var(--green-primary)' },
-  Low:      { bg: 'var(--gold-pale)', border: '#e8d080',             text: '#9a6e0a' },
-  Moderate: { bg: '#fff0e0',          border: '#f8c090',             text: '#c06010' },
-  High:     { bg: '#fde8e3',          border: '#f0b8a8',             text: '#c04a30' },
+  None:     { bg: 'var(--green-bg)',           border: 'var(--green-pale)',       text: 'var(--green-primary)' },
+  Low:      { bg: 'var(--gold-pale)',          border: 'rgba(234, 179, 8, 0.35)', text: 'var(--gold)' },
+  Moderate: { bg: 'rgba(217, 119, 6, 0.16)',   border: 'rgba(217, 119, 6, 0.38)', text: '#d97706' },
+  High:     { bg: 'rgba(239, 68, 68, 0.16)',   border: 'rgba(239, 68, 68, 0.38)', text: '#ef4444' },
 };
 
 const COMMON_CROPS = [
@@ -254,9 +254,9 @@ export default function DiseaseScanner({ onBack }) {
             onDragLeave={() => setDragOver(false)}
             onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
             style={{
-              border: `2px dashed ${dragOver ? 'var(--green-primary)' : 'var(--border-color)'}`,
+              border: `2px dashed ${dragOver ? 'var(--green-primary)' : 'var(--border-glass)'}`,
               borderRadius: 'var(--radius-lg)',
-              background: dragOver ? 'var(--green-bg)' : '#ffffff',
+              background: dragOver ? 'var(--green-bg)' : 'var(--bg-card)',
               padding: '3rem 2rem',
               textAlign: 'center',
               cursor: 'pointer',
@@ -270,7 +270,7 @@ export default function DiseaseScanner({ onBack }) {
             <div style={{ width: 80, height: 80, background: 'var(--green-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', border: '2px solid var(--green-pale)' }}>
               <Upload size={34} color="var(--green-primary)" />
             </div>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.4rem' }}>Upload Leaf Photo</h3>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>Upload Leaf Photo</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem', maxWidth: '380px' }}>
               Drag & drop or click to upload. JPG, PNG, WEBP supported.
             </p>
@@ -282,21 +282,21 @@ export default function DiseaseScanner({ onBack }) {
             </p>
           </div>
         ) : (
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', background: 'var(--bg-section)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-glass)' }}>
             <img
               src={preview}
               alt="Uploaded leaf"
-              style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)', maxHeight: '360px', objectFit: 'contain' }}
+              style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-glass)', maxHeight: '360px', objectFit: 'contain' }}
             />
             <button
               onClick={reset}
-              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'rgba(255,255,255,0.95)', border: '1px solid var(--border-color)', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'var(--bg-surface-glass-heavy)', border: '1px solid var(--border-glass)', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(8px)', boxShadow: 'var(--shadow-sm)' }}
               title="Remove photo"
             >
               <X size={20} color="var(--text-primary)" />
             </button>
             {loading && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'var(--bg-surface-glass-heavy)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', backdropFilter: 'blur(10px)' }}>
                 <Loader size={40} color="var(--green-primary)" style={{ animation: 'spin 1s linear infinite' }} />
                 <p style={{ color: 'var(--green-primary)', fontWeight: 700, fontSize: '1rem' }}>Analyzing leaf with DigiGreen Vision AI…</p>
               </div>
@@ -382,13 +382,24 @@ export default function DiseaseScanner({ onBack }) {
           </div>
 
           {/* Disease Banner card */}
-          <div style={{ background: sev.bg, border: `2px solid ${sev.border}`, borderRadius: 'var(--radius-lg)', padding: '1.75rem 2rem', marginBottom: '1.25rem', boxShadow: '0 8px 30px rgba(28,43,26,0.12)' }}>
+          <div
+            className="card-glass"
+            style={{
+              background: sev.bg,
+              border: `2px solid ${sev.border}`,
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.75rem 2rem',
+              marginBottom: '1.25rem',
+              boxShadow: 'var(--shadow-glass)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.9)', padding: '0.25rem 0.75rem', borderRadius: '12px', border: `1px solid ${sev.border}`, color: sev.text, fontWeight: 700, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', background: 'var(--bg-surface-glass)', padding: '0.25rem 0.75rem', borderRadius: '12px', border: `1px solid ${sev.border}`, color: sev.text, fontWeight: 700, letterSpacing: '0.04em' }}>
                 🤖 DigiGreen DaViT-Base Vision AI
               </span>
               {result.condition_type && (
-                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, padding: '0.25rem 0.75rem', borderRadius: '12px', background: result.condition_type === 'healthy' ? '#dcfce7' : result.condition_type === 'pest' ? '#fef3c7' : '#fee2e2', color: result.condition_type === 'healthy' ? '#15803d' : result.condition_type === 'pest' ? '#b45309' : '#b91c1c' }}>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, padding: '0.25rem 0.75rem', borderRadius: '12px', background: result.condition_type === 'healthy' ? 'var(--green-bg)' : result.condition_type === 'pest' ? 'var(--gold-pale)' : 'rgba(239, 68, 68, 0.2)', color: result.condition_type === 'healthy' ? 'var(--green-primary)' : result.condition_type === 'pest' ? 'var(--gold)' : '#ef4444', border: '1px solid var(--border-glass)' }}>
                   {result.condition_type}
                 </span>
               )}
@@ -403,7 +414,7 @@ export default function DiseaseScanner({ onBack }) {
                   {result.condition || result.disease}
                 </div>
               </div>
-              <span className="badge" style={{ background: '#ffffff', color: sev.text, border: `1.5px solid ${sev.border}`, fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+              <span className="badge" style={{ background: 'var(--bg-surface-glass)', color: sev.text, border: `1.5px solid ${sev.border}`, fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
                 {result.severity} Severity Level
               </span>
             </div>
