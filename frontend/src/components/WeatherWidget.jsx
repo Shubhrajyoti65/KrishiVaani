@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   CloudSun, Wind, Droplets, Thermometer, AlertTriangle,
   RefreshCw, MapPin, Eye, Navigation, CheckCircle, ShieldAlert,
-  Calendar, ArrowUpRight
+  Calendar, ArrowUpRight, ArrowLeft
 } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { MAJOR_DISTRICTS_AND_CITIES } from '../data/agriData';
@@ -25,7 +25,7 @@ const CONDITION_COLOR = {
   storm:    { bg: '#fbf0e4', border: '#f5c898', text: '#d97706' },
 };
 
-export default function WeatherWidget({ compact = false }) {
+export default function WeatherWidget({ compact = false, onBack }) {
   const [selectedCity, setSelectedCity] = useState(null);
   const [cityName, setCityName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -291,7 +291,53 @@ export default function WeatherWidget({ compact = false }) {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <span className="section-label">Real-Time OpenWeather Agromet</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to Dashboard"
+              title="Back to Dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--border-color)',
+                background: '#ffffff',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--green-bg)';
+                e.currentTarget.style.color = 'var(--green-primary)';
+                e.currentTarget.style.borderColor = 'var(--green-pale)';
+                e.currentTarget.style.transform = 'translateX(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.transform = 'translateX(0)';
+              }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <span style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--green-primary)',
+          }}>
+            Real-Time OpenWeather Agromet
+          </span>
+        </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Weather & Extreme Climate Advisory</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Search any district across India or type any city name to get live meteorological observations, 5-day precision agromet forecasts, and ICAR farming advisories.

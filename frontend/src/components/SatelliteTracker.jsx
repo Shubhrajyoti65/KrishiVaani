@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Satellite, MapPin, TrendingUp, Droplets, Thermometer, Eye, Loader, RefreshCw, AlertCircle, Info, Navigation, Sliders, CheckCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Satellite, MapPin, TrendingUp, Droplets, Thermometer, Eye, Loader, RefreshCw, AlertCircle, Info, Navigation, Sliders, CheckCircle, ArrowLeft } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { MAJOR_DISTRICTS_AND_CITIES } from '../data/agriData';
 
@@ -15,7 +15,7 @@ function getNdviLevel(ndvi) {
   return NDVI_LEVELS.find(l => ndvi >= l.min && ndvi <= l.max) || NDVI_LEVELS[2];
 }
 
-export default function SatelliteTracker() {
+export default function SatelliteTracker({ onBack }) {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [customLat, setCustomLat] = useState('');
   const [customLon, setCustomLon] = useState('');
@@ -25,6 +25,13 @@ export default function SatelliteTracker() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const resultsRef = useRef(null);
+
+  useEffect(() => {
+    if (result && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   const handleLocationChange = (val, opt) => {
     if (opt) {
@@ -173,7 +180,53 @@ export default function SatelliteTracker() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <span className="section-label">Sentinel-2 Multispectral</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to Dashboard"
+              title="Back to Dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--border-color)',
+                background: '#ffffff',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--green-bg)';
+                e.currentTarget.style.color = 'var(--green-primary)';
+                e.currentTarget.style.borderColor = 'var(--green-pale)';
+                e.currentTarget.style.transform = 'translateX(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.transform = 'translateX(0)';
+              }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <span style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--green-primary)',
+          }}>
+            Sentinel-2 Multispectral
+          </span>
+        </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Satellite NDVI Crop Health & Water Stress</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Search any agricultural district across India or enter exact farm GPS coordinates to monitor live vegetation indices (NDVI/NDWI) via European Space Agency (ESA) Sentinel-2 satellite imagery.
@@ -339,7 +392,54 @@ export default function SatelliteTracker() {
 
       {/* Results view */}
       {result && ndviLevel && (
-        <div className="animate-fade-in-up">
+        <div ref={resultsRef} className="animate-fade-in-up" style={{ marginBottom: '2rem' }}>
+          {/* Calculation Status Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#f0fdf4',
+            border: '1.5px solid #86efac',
+            color: '#166534',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '10px',
+            marginBottom: '1.25rem',
+            fontWeight: 600,
+            fontSize: '0.88rem',
+            boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: '#22c55e',
+                color: '#ffffff',
+                flexShrink: 0
+              }}>
+                <CheckCircle size={15} />
+              </span>
+              <span>Satellite Multispectral Index Computed — NDVI & Moisture Indices Ready</span>
+            </div>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: '#dcfce7',
+              color: '#15803d',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' }} />
+              Satellite Data Ready
+            </span>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             {/* NDVI Card */}
             <div className="card" style={{ background: ndviLevel.bg, border: `2px solid ${ndviLevel.color}40`, padding: '1.5rem', textAlign: 'center' }}>

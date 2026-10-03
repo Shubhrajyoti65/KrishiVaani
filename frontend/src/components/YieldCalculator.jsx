@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info, DollarSign, PieChart, ShieldCheck, Save, CheckCircle, Store } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info, DollarSign, PieChart, ShieldCheck, Save, CheckCircle, Store, ArrowLeft } from 'lucide-react';
 import { logCropToFarmHistory } from '../utils/farmHistoryService';
 
 const CROPS_MSP = {
@@ -19,7 +19,7 @@ const DEFAULT_FORM = { crop: 'Wheat', area: 2, soil_quality: 'medium', irrigatio
 const STATES = ['Punjab', 'Haryana', 'Uttar Pradesh', 'Bihar', 'Maharashtra', 'Rajasthan', 'Madhya Pradesh', 'Karnataka', 'Gujarat', 'West Bengal', 'Odisha', 'Andhra Pradesh', 'Tamil Nadu'];
 const IRRIGATION = ['Canal', 'Drip', 'Sprinkler', 'Rain-fed', 'Borewell'];
 
-export default function YieldCalculator() {
+export default function YieldCalculator({ onBack }) {
   const [tab, setTab] = useState('cost-returns'); // 'cost-returns' | 'yield-msp'
 
   // Yield & MSP state
@@ -49,6 +49,21 @@ export default function YieldCalculator() {
   const [costLoading, setCostLoading] = useState(false);
   const [costError,   setCostError]   = useState(null);
   const [mandiData,   setMandiData]   = useState(null);
+
+  const costResultsRef = useRef(null);
+  const yieldResultsRef = useRef(null);
+
+  useEffect(() => {
+    if (costResult && costResultsRef.current) {
+      costResultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [costResult]);
+
+  useEffect(() => {
+    if (result && yieldResultsRef.current) {
+      yieldResultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   useEffect(() => {
     let active = true;
@@ -203,7 +218,53 @@ export default function YieldCalculator() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <span className="section-label">Farm Economics & Revenue</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to Dashboard"
+              title="Back to Dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--border-color)',
+                background: '#ffffff',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--green-bg)';
+                e.currentTarget.style.color = 'var(--green-primary)';
+                e.currentTarget.style.borderColor = 'var(--green-pale)';
+                e.currentTarget.style.transform = 'translateX(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.transform = 'translateX(0)';
+              }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <span style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--green-primary)',
+          }}>
+            Farm Economics & Revenue
+          </span>
+        </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Cultivation Cost & Revenue Calculator</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Calculate deterministic operational costs, forecast MSP harvest revenues, and compute gross net returns per acre.
@@ -254,15 +315,15 @@ export default function YieldCalculator() {
            TAB 1: CULTIVATION COST & GROSS RETURN
       ══════════════════════════════════════ */}
       {tab === 'cost-returns' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,0.9fr)', gap: '2rem', alignItems: 'start' }}>
-          {/* Input Form */}
-          <div className="card">
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem' }}>
+        <div>
+          {/* Query Form (Full Width on Top) */}
+          <div className="card" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.25rem' }}>
               Operational Input Cost Parameters
             </h3>
 
             <form onSubmit={handleCostSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Crop</label>
                   <select className="form-select" name="crop" value={costForm.crop} onChange={handleCostChange}>
@@ -287,9 +348,6 @@ export default function YieldCalculator() {
                   <label className="form-label">Area (Acres)</label>
                   <input className="form-input" type="number" step="0.1" name="area_acres" value={costForm.area_acres} onChange={handleCostChange} min={0.1} max={500} required />
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
                 <div className="form-group">
                   <label className="form-label">Expected Yield (Q/Acre)</label>
                   <input className="form-input" type="number" step="0.1" name="expected_yield_quintals_per_acre" value={costForm.expected_yield_quintals_per_acre} onChange={handleCostChange} placeholder="Auto (Benchmark)" />
@@ -302,26 +360,26 @@ export default function YieldCalculator() {
 
               {/* APMC Mandi Rate in Tab 1 */}
               {mandiData?.records?.length > 0 && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius)', padding: '0.65rem 0.85rem', marginBottom: '1.25rem' }}>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: '#166534', fontWeight: 700 }}>
-                      <Store size={14} color="#15803d" />
-                      <span>{mandiData.records[0].market} ({mandiData.records[0].state}):</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#166534', fontWeight: 700 }}>
+                      <Store size={15} color="#15803d" />
+                      <span>Live APMC Benchmark ({mandiData.records[0].market}, {mandiData.records[0].state}):</span>
                     </div>
-                    <strong style={{ color: '#15803d', fontSize: '0.9rem' }}>₹{mandiData.records[0].modal_price}/qtl</strong>
+                    <strong style={{ color: '#15803d', fontSize: '0.95rem' }}>₹{mandiData.records[0].modal_price}/qtl</strong>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#166534' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#166534' }}>
                     {mandiData.records[0].advisory}
                   </div>
                 </div>
               )}
 
               {/* Optional User Operational Overrides */}
-              <div style={{ background: 'var(--bg-section)', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
-                  Custom Costs (₹ INR) <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--text-muted)' }}>— leave blank to auto-estimate from ICAR CACP benchmarks</span>
+              <div style={{ background: 'var(--bg-section)', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Custom Operational Expenses (₹ INR) <span style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--text-muted)' }}>— leave blank to auto-estimate from ICAR CACP benchmarks</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>Seeds (₹)</label>
                     <input className="form-input" type="number" name="seed_cost_inr" value={costForm.seed_cost_inr} onChange={handleCostChange} placeholder="Auto" />
@@ -357,110 +415,159 @@ export default function YieldCalculator() {
                 </div>
               </div>
 
-              <button className="btn btn-primary" type="submit" disabled={costLoading} style={{ width: '100%', padding: '0.85rem' }}>
+              <button className="btn btn-primary btn-lg" type="submit" disabled={costLoading} style={{ width: '100%', padding: '0.85rem' }}>
                 {costLoading ? <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Calculator size={18} />}
                 {costLoading ? ' Calculating Economics...' : ' Calculate Cost & Gross Return'}
               </button>
             </form>
           </div>
 
-          {/* Results Summary & Breakdown */}
-          <div>
-            {costLoading && (
-              <div className="card" style={{ textAlign: 'center', padding: '3.5rem' }}>
-                <Loader size={44} color="var(--green-primary)" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
-                <p style={{ color: 'var(--text-muted)' }}>Computing deterministic cost summation and gross returns…</p>
-              </div>
-            )}
+          {/* Results Summary & Breakdown (Full Width Below Query) */}
+          {costLoading && (
+            <div className="card" style={{ textAlign: 'center', padding: '3.5rem', marginBottom: '2rem' }}>
+              <Loader size={44} color="var(--green-primary)" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
+              <p style={{ color: 'var(--text-muted)' }}>Computing deterministic cost summation and gross returns…</p>
+            </div>
+          )}
 
-            {costResult && !costLoading && (
-              <div className="animate-fade-in-up">
-                {/* Gross Return Hero Card */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #1e3a1e 0%, var(--green-primary) 100%)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1.75rem',
-                  color: '#ffffff',
-                  marginBottom: '1rem',
-                  boxShadow: 'var(--shadow-md)'
+          {costResult && !costLoading && (
+            <div ref={costResultsRef} className="animate-fade-in-up" style={{ marginBottom: '2rem' }}>
+              {/* Calculation Status Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                color: '#166534',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '10px',
+                marginBottom: '1.25rem',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    color: '#ffffff',
+                    flexShrink: 0
+                  }}>
+                    <CheckCircle size={15} />
+                  </span>
+                  <span>Farm Economics Calculated — Cultivation Cost & Gross Return Ready</span>
+                </div>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
                 }}>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
-                    Farm Economics · {costResult.area_acres} Acres {costResult.crop}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: '0.75rem' }}>
-                    Gross Return (Revenue − Total Cost)
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', fontWeight: 800, color: '#d4f0c0', lineHeight: 1, marginBottom: '0.75rem' }}>
-                    ₹{costResult.estimated_gross_return_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                  </div>
-                  <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '0.75rem' }}>
-                    <div>
-                      <div style={{ opacity: 0.75, fontSize: '0.72rem' }}>Total Cost</div>
-                      <div style={{ fontWeight: 700 }}>₹{costResult.total_production_cost_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                    </div>
-                    <div>
-                      <div style={{ opacity: 0.75, fontSize: '0.72rem' }}>Estimated Revenue</div>
-                      <div style={{ fontWeight: 700 }}>₹{costResult.estimated_revenue_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                    </div>
-                    <div>
-                      <div style={{ opacity: 0.75, fontSize: '0.72rem' }}>Profit Margin</div>
-                      <div style={{ fontWeight: 700, color: '#d4f0c0' }}>{costResult.profit_margin_percent}%</div>
-                    </div>
-                    <div>
-                      <div style={{ opacity: 0.75, fontSize: '0.72rem' }}>Cost / Acre</div>
-                      <div style={{ fontWeight: 700 }}>₹{costResult.cost_per_acre_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                    </div>
-                  </div>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' }} />
+                  Results Ready
+                </span>
+              </div>
 
-                  <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '0.75rem' }}>
-                    <button
-                      type="button"
-                      onClick={handleSaveCostResult}
-                      disabled={saveLoading}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        width: '100%',
-                        padding: '0.6rem 1rem',
-                        background: '#ffffff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: 'var(--green-primary)',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      {saveLoading ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
-                      Save Economics to Farm History
-                    </button>
-                    {saveMsg && (
-                      <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: saveMsg.startsWith('Error') ? '#fca5a5' : '#d4f0c0', fontWeight: 600, textAlign: 'center' }}>
-                        {saveMsg}
-                      </div>
-                    )}
+              {/* Gross Return Hero Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #1e3a1e 0%, var(--green-primary) 100%)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '2rem',
+                color: '#ffffff',
+                marginBottom: '1.5rem',
+                boxShadow: 'var(--shadow-md)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
+                      Farm Economics · {costResult.area_acres} Acres {costResult.crop} ({costResult.season})
+                    </div>
+                    <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                      Gross Net Return (Revenue − Total Cost)
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveCostResult}
+                    disabled={saveLoading}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.55rem 1.15rem',
+                      background: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: 'var(--green-primary)',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    {saveLoading ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
+                    Save to Profile History
+                  </button>
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.75rem', fontWeight: 800, color: '#d4f0c0', lineHeight: 1.1, marginBottom: '1.25rem' }}>
+                  ₹{costResult.estimated_gross_return_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '1rem' }}>
+                  <div>
+                    <div style={{ opacity: 0.75, fontSize: '0.75rem', textTransform: 'uppercase' }}>Total Production Cost</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>₹{costResult.total_production_cost_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                  </div>
+                  <div>
+                    <div style={{ opacity: 0.75, fontSize: '0.75rem', textTransform: 'uppercase' }}>Estimated Gross Revenue</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>₹{costResult.estimated_revenue_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                  </div>
+                  <div>
+                    <div style={{ opacity: 0.75, fontSize: '0.75rem', textTransform: 'uppercase' }}>Profit Margin</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#d4f0c0' }}>{costResult.profit_margin_percent}%</div>
+                  </div>
+                  <div>
+                    <div style={{ opacity: 0.75, fontSize: '0.75rem', textTransform: 'uppercase' }}>Cost Per Acre</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>₹{costResult.cost_per_acre_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
                   </div>
                 </div>
 
-                {/* Detailed Operational Breakdown */}
-                <div className="card" style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.75rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {saveMsg && (
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.82rem', color: saveMsg.startsWith('Error') ? '#fca5a5' : '#d4f0c0', fontWeight: 600 }}>
+                    {saveMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Detailed Operational Breakdown & Notes Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                <div className="card">
+                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>Operational Cost Breakdown</span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deterministic Arithmetic</span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {costResult.cost_breakdown.map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0.6rem', background: 'var(--bg-section)', borderRadius: '6px' }}>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0.75rem', background: 'var(--bg-section)', borderRadius: '6px' }}>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.84rem' }}>{item.category}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{item.description}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.86rem' }}>{item.category}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{item.description}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
                             ₹{item.amount_inr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                           </div>
                           <span style={{
@@ -479,24 +586,23 @@ export default function YieldCalculator() {
                   </div>
                 </div>
 
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, background: '#faf5ee', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #ebd8c2' }}>
-                  ℹ️ {costResult.disclaimer}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="card card-cream">
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>💡 Economic Insights</div>
+                    <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                      <li>Net profit is calculated based on expected yield ({costResult.expected_yield_quintals_per_acre} Q/Acre) multiplied by selling rate.</li>
+                      <li>Standard benchmark inputs adhere to Commission for Agricultural Costs and Prices (CACP) and ICAR regional reports.</li>
+                      <li>Save this calculation to your farm profile to compare season-over-season operational performance.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, background: '#faf5ee', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #ebd8c2' }}>
+                    ℹ️ {costResult.disclaimer}
+                  </div>
                 </div>
               </div>
-            )}
-
-            {!costResult && !costLoading && (
-              <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'var(--bg-section)' }}>
-                <Calculator size={44} color="var(--border-color)" style={{ margin: '0 auto 1rem' }} />
-                <h4 style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                  Awaiting Calculation
-                </h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  Fill in your acreage and operational costs, or click Calculate to benchmark using official ICAR CACP cultivation data.
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -504,12 +610,12 @@ export default function YieldCalculator() {
            TAB 2: HARVEST YIELD & MSP
       ══════════════════════════════════════ */}
       {tab === 'yield-msp' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,400px)', gap: '2rem', alignItems: 'start' }}>
-          {/* Form */}
-          <div className="card">
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.5rem' }}>Farm Details</h3>
+        <div>
+          {/* Form (Full Width on Top) */}
+          <div className="card" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.25rem' }}>Farm & Crop Parameters</h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Crop</label>
                   <select className="form-select" name="crop" value={form.crop} onChange={handleChange}>
@@ -534,7 +640,7 @@ export default function YieldCalculator() {
                     {IRRIGATION.map(i => <option key={i}>{i}</option>)}
                   </select>
                 </div>
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <div className="form-group">
                   <label className="form-label">State</label>
                   <select className="form-select" name="state" value={form.state} onChange={handleChange}>
                     {STATES.map(s => <option key={s}>{s}</option>)}
@@ -550,7 +656,7 @@ export default function YieldCalculator() {
                     <strong style={{ color: '#7a5500' }}>₹{CROPS_MSP[form.crop].msp} / quintal</strong>
                   </div>
                   <span style={{ fontSize: '0.75rem', background: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#9a6e0a' }}>
-                    {CROPS_MSP[form.crop].season}
+                    {CROPS_MSP[form.crop].season} Season
                   </span>
                 </div>
               )}
@@ -573,101 +679,154 @@ export default function YieldCalculator() {
                 </div>
               )}
 
-              <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%' }}>
+              <button className="btn btn-primary btn-lg" type="submit" disabled={loading} style={{ width: '100%' }}>
                 {loading ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Calculator size={16} />}
                 {loading ? ' Calculating...' : ' Forecast Yield & Revenue'}
               </button>
             </form>
           </div>
 
-          {/* Results panel */}
-          <div>
-            {result && (
-              <div className="animate-fade-in-up">
-                {/* Revenue hero */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #1e3a1e 0%, var(--green-primary) 100%)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '2rem',
-                  color: '#ffffff',
-                  marginBottom: '1rem',
-                  position: 'relative',
-                  overflow: 'hidden',
+          {/* Results panel (Full Width Below Form) */}
+          {loading && (
+            <div className="card" style={{ textAlign: 'center', padding: '3.5rem', marginBottom: '2rem' }}>
+              <Loader size={44} color="var(--green-primary)" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
+              <p style={{ color: 'var(--text-muted)' }}>Calculating ML yield prediction and MSP revenue…</p>
+            </div>
+          )}
+
+          {result && !loading && (
+            <div ref={yieldResultsRef} className="animate-fade-in-up" style={{ marginBottom: '2rem' }}>
+              {/* Calculation Status Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                color: '#166534',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '10px',
+                marginBottom: '1.25rem',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    color: '#ffffff',
+                    flexShrink: 0
+                  }}>
+                    <CheckCircle size={15} />
+                  </span>
+                  <span>Harvest Yield Forecast Calculated — MSP & Net Profit Ready</span>
+                </div>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
                 }}>
-                  <div style={{ fontSize: '0.82rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
-                    Estimated Total Revenue (at MSP)
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', fontWeight: 800, color: '#d4f0c0', lineHeight: 1, marginBottom: '0.5rem' }}>
-                    ₹{Number(result.estimated_revenue_inr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.85 }}>
-                    Net Profit (after ~38% input costs): <strong>₹{Number(result.net_profit_inr || result.estimated_revenue_inr * 0.62).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>
-                  </div>
-                </div>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' }} />
+                  Results Ready
+                </span>
+              </div>
 
-                {/* Breakdown cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
-                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--green-primary)' }}>
-                      {result.estimated_yield_quintals}
+              {/* Revenue hero */}
+              <div style={{
+                background: 'linear-gradient(135deg, #1e3a1e 0%, var(--green-primary) 100%)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '2rem',
+                color: '#ffffff',
+                marginBottom: '1.25rem',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-md)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.82rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
+                      Harvest Yield Forecast · {form.area} Acres {form.crop} ({result.season || 'Rabi'})
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Estimated Yield (Quintals)</div>
-                  </div>
-                  <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
-                    <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', fontWeight: 800, color: '#9a6e0a' }}>
-                      ₹{result.msp_price_per_quintal || CROPS_MSP[form.crop]?.msp}
+                    <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                      Estimated Total Revenue (at MSP)
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>MSP Price / Quintal</div>
                   </div>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
                   <button
                     type="button"
                     onClick={handleSaveYieldResult}
                     disabled={saveLoading}
-                    className="btn btn-outline"
                     style={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
                       gap: '0.5rem',
-                      width: '100%',
-                      padding: '0.65rem 1rem',
-                      borderColor: 'var(--green-primary)',
+                      padding: '0.55rem 1.15rem',
+                      background: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
                       color: 'var(--green-primary)',
-                      fontWeight: 600,
-                      fontSize: '0.85rem'
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   >
                     {saveLoading ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
-                    Save Yield Forecast to Farm History
+                    Save Forecast to History
                   </button>
-                  {saveMsg && (
-                    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: saveMsg.startsWith('Error') ? '#dc2626' : '#16a34a', fontWeight: 600, textAlign: 'center' }}>
-                      {saveMsg}
-                    </div>
-                  )}
                 </div>
 
-                <div className="card card-cream">
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>💡 Optimization Tips</div>
-                  <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    <li>Drip irrigation can increase yield by 15–25% while saving 40% water.</li>
-                    <li>Sell through e-NAM portals to access competitive buyers across state borders.</li>
-                  </ul>
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.75rem', fontWeight: 800, color: '#d4f0c0', lineHeight: 1.1, marginBottom: '0.75rem' }}>
+                  ₹{Number(result.estimated_revenue_inr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </div>
+                <div style={{ fontSize: '0.88rem', opacity: 0.88 }}>
+                  Net Profit (after ~38% operational cost benchmark): <strong>₹{Number(result.net_profit_inr || result.estimated_revenue_inr * 0.62).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>
+                </div>
+
+                {saveMsg && (
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.82rem', color: saveMsg.startsWith('Error') ? '#fca5a5' : '#d4f0c0', fontWeight: 600 }}>
+                    {saveMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Breakdown cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', fontWeight: 800, color: 'var(--green-primary)' }}>
+                    {result.estimated_yield_quintals}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Estimated Yield (Quintals)</div>
+                </div>
+                <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', fontWeight: 800, color: '#9a6e0a' }}>
+                    ₹{result.msp_price_per_quintal || CROPS_MSP[form.crop]?.msp}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Govt MSP Price / Quintal</div>
                 </div>
               </div>
-            )}
 
-            {!result && !loading && (
-              <div className="card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'var(--bg-section)' }}>
-                <TrendingUp size={44} color="var(--border-color)" style={{ margin: '0 auto 1rem' }} />
-                <h4 style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Awaiting Input</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Enter farm details and click calculate to estimate yield and revenue.</p>
+              <div className="card card-cream">
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>💡 Optimization Tips</div>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  <li>Drip irrigation can increase yield by 15–25% while saving 40% water compared to flood irrigation.</li>
+                  <li>Sell through e-NAM electronic trading portals to access competitive wholesale buyers across state borders.</li>
+                  <li>Verify soil micro-nutrients using our Soil Health Card feature to ensure maximum potential yield.</li>
+                </ul>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
