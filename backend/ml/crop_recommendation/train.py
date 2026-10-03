@@ -139,6 +139,17 @@ def train_and_evaluate():
     joblib.dump((best_model, label_encoder), SERVICE_MODEL_PATH)
     print(f"[SUCCESS] Best model serialized to:\n  - {best_model_path}\n  - {SERVICE_MODEL_PATH}")
 
+    # Explicitly serialize XGBoost model for production XGBoost deployment
+    if "XGBoost" in candidates:
+        xgb_model = candidates["XGBoost"]
+        xgb_model_path = os.path.join(MODEL_DIR, "crop_recommendation_xgb.joblib")
+        xgb_service_path = os.path.join(
+            PROJECT_ROOT, "backend", "app", "services", "crop_recommendation", "crop_recommendation_xgb.joblib"
+        )
+        joblib.dump((xgb_model, label_encoder), xgb_model_path)
+        joblib.dump((xgb_model, label_encoder), xgb_service_path)
+        print(f"[SUCCESS] XGBoost model specifically serialized to:\n  - {xgb_model_path}\n  - {xgb_service_path}")
+
     # Save comprehensive metrics JSON
     metrics_data = {
         "model_name": f"crop_recommendation_{best_name.lower().replace(' ', '_')}",

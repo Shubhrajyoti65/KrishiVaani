@@ -108,3 +108,39 @@ def test_nonexistent_farmer_returns_404():
 
     soil_res = client.get("/api/v1/farmers/f_nonexistent123/soil-tests")
     assert soil_res.status_code == 404
+
+def test_farm_history_logging_and_retrieval():
+    # Fetch existing farmer
+    get_res = client.get("/api/v1/farmers/phone/+919876543210")
+    farmer_id = get_res.json()["id"]
+
+    # Log farm history record
+    record_payload = {
+        "crop": "Wheat",
+        "season": "Rabi",
+        "year": 2024,
+        "area_acres": 4.0,
+        "yield_obtained_quintals": 84.0,
+        "production_cost_inr": 45000.0,
+        "revenue_inr": 146100.0,
+        "soil_condition_note": "Excellent crop performance."
+    }
+    hist_res = client.post(f"/api/v1/farmers/{farmer_id}/farm-history", json=record_payload)
+    assert hist_res.status_code == 201
+    hist_data = hist_res.json()
+    assert hist_data["crop"] == "Wheat"
+    assert hist_data["yield_obtained_quintals"] == 84.0
+    assert hist_data["net_profit_inr"] == 101100.0
+
+    # Fetch farm history
+    list_res = client.get(f"/api/v1/farmers/{farmer_id}/farm-history")
+    assert list_res.status_code == 200
+    records = list_res.json()
+    assert len(records) >= 1
+    assert records[0]["crop"] == "Wheat"
+
+    # Test alias route /crops-history
+    alias_res = client.get(f"/api/v1/farmers/{farmer_id}/crops-history")
+    assert alias_res.status_code == 200
+    assert len(alias_res.json()) >= 1
+

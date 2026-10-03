@@ -1,8 +1,9 @@
 import os
 import io
 import base64
-import httpx
-from typing import Dict
+import logging
+from typing import Dict, Optional
+from backend.app.core.config import settings
 from backend.app.services.voice_language_service.schema import (
     TranslateRequest,
     TranslateResponse,
@@ -11,10 +12,9 @@ from backend.app.services.voice_language_service.schema import (
     TextToSpeechRequest,
     TextToSpeechResponse,
 )
+from backend.app.services.voice_language_service.sarvam_client import sarvam_client
 
-BHASHINI_USER_ID = os.getenv("BHASHINI_USER_ID", None)
-BHASHINI_API_KEY = os.getenv("BHASHINI_API_KEY", None)
-BHASHINI_PIPELINE_ID = os.getenv("BHASHINI_PIPELINE_ID", "64392f08f21d092df78502f9")
+logger = logging.getLogger(__name__)
 
 # Dictionary baseline for offline Indian language translations
 TRANSLATION_DICT = {
@@ -49,10 +49,50 @@ TRANSLATION_DICT = {
         "revenue": "ଆୟ",
         "healthy": "ସୁସ୍ଥ",
         "disease": "ରୋଗ",
+    },
+    "bn": {
+        "recommended crop": "সুপারিশকৃত ফসল",
+        "rice": "ধান / চাল",
+        "wheat": "গম",
+        "maize": "ভুট্টা",
+        "cotton": "তুলা",
+        "weather": "আবহাওয়া",
+        "temperature": "তাপমাত্রা",
+        "humidity": "আর্দ্রতা",
+        "rainfall": "বৃষ্টিপাত",
+        "fertilizer": "সার",
+        "yield": "ফলন",
+        "revenue": "আয়",
+        "healthy": "সুস্থ",
+        "disease": "রোগ",
+    },
+    "pa": {
+        "recommended crop": "ਸਿਫਾਰਸ਼ ਕੀਤੀ ਫਸਲ",
+        "rice": "ਝੋਨਾ / ਚੌਲ",
+        "wheat": "ਕਣਕ",
+        "maize": "ਮੱਕੀ",
+        "cotton": "ਕਪਾਹ",
+        "weather": "ਮੌਸਮ",
+        "temperature": "ਤਾਪਮਾਨ",
+        "humidity": "ਨਮੀ",
+        "rainfall": "ਮੀਂਹ",
+        "fertilizer": "ਖਾਦ",
+        "yield": "ਝਾੜ",
+        "revenue": "ਆਮਦਨ",
+        "healthy": "ਤੰਦਰੁਸਤ",
+        "disease": "ਬਿਮਾਰੀ",
     }
 }
 
-class BhashiniVoiceLanguageService:
+class SarvamVoiceLanguageService:
+    """
+    Dedicated voice, speech-to-text, text-to-speech, and translation service
+    powered entirely by Sarvam AI:
+    - Translation: Sarvam mayura:v1
+    - Speech-to-Text (ASR): Sarvam saaras:v1
+    - Text-to-Speech (TTS): Sarvam bulbul:v1
+    - Built-in offline fallback for local testing without network/API keys
+    """
 
     async def translate_text(self, req: TranslateRequest) -> TranslateResponse:
         if req.source_language == req.target_language:
@@ -64,21 +104,26 @@ class BhashiniVoiceLanguageService:
                 engine="identity"
             )
 
-        # Try live Bhashini API if credentials present
-        if BHASHINI_USER_ID and BHASHINI_API_KEY:
+        # 1. Primary: Sarvam AI mayura:v1
+        if sarvam_client.is_configured:
             try:
-                translated = await self._call_bhashini_nmt(req.text, req.source_language, req.target_language)
-                return TranslateResponse(
-                    original_text=req.text,
-                    translated_text=translated,
-                    source_language=req.source_language,
-                    target_language=req.target_language,
-                    engine="Bhashini NMT API"
+                translated = await sarvam_client.translate(
+                    text=req.text,
+                    source_lang=req.source_language,
+                    target_lang=req.target_language
                 )
-            except Exception:
-                pass
+                if translated:
+                    return TranslateResponse(
+                        original_text=req.text,
+                        translated_text=translated,
+                        source_language=req.source_language,
+                        target_language=req.target_language,
+                        engine="Sarvam AI (mayura:v1)"
+                    )
+            except Exception as e:
+                logger.warning(f"Sarvam AI translation error, using offline dictionary: {e}")
 
-        # Offline dictionary & rule fallback engine
+        # 2. Resilient agricultural dictionary & rule fallback engine
         translated_text = self._offline_translate(req.text, req.target_language)
         return TranslateResponse(
             original_text=req.text,
@@ -89,49 +134,66 @@ class BhashiniVoiceLanguageService:
         )
 
     async def speech_to_text(self, req: SpeechToTextRequest) -> SpeechToTextResponse:
-        if BHASHINI_USER_ID and BHASHINI_API_KEY:
+        # 1. Primary: Sarvam AI saaras:v1
+        if sarvam_client.is_configured:
             try:
-                text = await self._call_bhashini_asr(req.audio_base64, req.language)
-                return SpeechToTextResponse(
-                    transcribed_text=text,
-                    language=req.language,
-                    confidence=0.92
+                stt_result = await sarvam_client.speech_to_text(
+                    audio_base64=req.audio_base64,
+                    language=req.language
                 )
-            except Exception:
-                pass
+                if stt_result and stt_result.get("transcribed_text"):
+                    return SpeechToTextResponse(
+                        transcribed_text=stt_result["transcribed_text"],
+                        language=req.language,
+                        confidence=stt_result.get("confidence", 0.95),
+                        engine="Sarvam AI (saaras:v1)"
+                    )
+            except Exception as e:
+                logger.warning(f"Sarvam AI STT error, using offline speech engine: {e}")
 
-        # Simulated speech transcription fallback
+        # 2. Simulated speech transcription fallback
         sample_transcripts = {
             "hi": "मेरे खेत के लिए सबसे अच्छी फसल कौन सी है और मौसम कैसा रहेगा?",
             "or": "ମୋ ଜମି ପାଇଁ କେଉଁ ଫସଲ ଭଲ ହେବ ଏବଂ ବର୍ଷା କେବେ ହେବ?",
+            "bn": "আমার জমির জন্য কোন ফসল সবচেয়ে ভালো হবে এবং আবহাওয়া কেমন থাকবে?",
+            "pa": "ਮੇਰੇ ਖੇਤ ਲਈ ਕਿਹੜੀ ਫਸਲ ਸਭ ਤੋਂ ਵਧੀਆ ਰਹੇਗੀ ਅਤੇ ਮੌਸਮ ਕਿਹੋ ਜਿਹਾ ਰਹੇਗਾ?",
             "en": "What is the recommended crop and weather forecast for my field?"
         }
         text = sample_transcripts.get(req.language, "What is the recommended crop for my soil?")
         return SpeechToTextResponse(
             transcribed_text=text,
             language=req.language,
-            confidence=0.89
+            confidence=0.89,
+            engine="KrishiVaani Offline Speech Engine"
         )
 
     async def text_to_speech(self, req: TextToSpeechRequest) -> TextToSpeechResponse:
-        if BHASHINI_USER_ID and BHASHINI_API_KEY:
+        # 1. Primary: Sarvam AI bulbul:v1
+        if sarvam_client.is_configured:
             try:
-                b64_audio = await self._call_bhashini_tts(req.text, req.language, req.gender)
-                return TextToSpeechResponse(
-                    audio_base64=b64_audio,
-                    audio_format="audio/mp3",
-                    language=req.language
+                tts_result = await sarvam_client.text_to_speech(
+                    text=req.text,
+                    language=req.language,
+                    gender=req.gender or "female"
                 )
-            except Exception:
-                pass
+                if tts_result and tts_result.get("audio_base64"):
+                    return TextToSpeechResponse(
+                        audio_base64=tts_result["audio_base64"],
+                        audio_format=tts_result.get("audio_format", "audio/wav"),
+                        language=req.language,
+                        engine="Sarvam AI (bulbul:v1)"
+                    )
+            except Exception as e:
+                logger.warning(f"Sarvam AI TTS error, using offline synthesizer: {e}")
 
-        # Generate lightweight valid MP3 audio header bytes fallback
+        # 2. Generate lightweight valid MP3 audio header bytes fallback
         dummy_mp3_bytes = b"\xFF\xFB\x90\x44\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" * 20
         b64_audio = base64.b64encode(dummy_mp3_bytes).decode("utf-8")
         return TextToSpeechResponse(
             audio_base64=b64_audio,
             audio_format="audio/mp3",
-            language=req.language
+            language=req.language,
+            engine="KrishiVaani Offline Audio Synthesizer"
         )
 
     def _offline_translate(self, text: str, target_lang: str) -> str:
@@ -145,20 +207,11 @@ class BhashiniVoiceLanguageService:
 
         return translated
 
-    async def _call_bhashini_nmt(self, text: str, src_lang: str, tgt_lang: str) -> str:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            headers = {
-                "userID": BHASHINI_USER_ID,
-                "ulcaApiKey": BHASHINI_API_KEY,
-                "Content-Type": "application/json"
-            }
-            body = {
-                "pipelineTasks": [{"taskType": "translation", "config": {"language": {"sourceLanguage": src_lang, "targetLanguage": tgt_lang}}}],
-                "inputData": {"input": [{"source": text}]}
-            }
-            resp = await client.post("https://dhruva-api.bhashini.gov.in/services/inference/pipeline", json=body, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-            return data["pipelineResponse"][0]["output"][0]["target"]
+# Primary instances
+sarvam_voice_service = SarvamVoiceLanguageService()
+voice_language_service = sarvam_voice_service
 
-bhashini_service = BhashiniVoiceLanguageService()
+# Compatibility aliases
+VoiceLanguageService = SarvamVoiceLanguageService
+bhashini_service = sarvam_voice_service
+BhashiniVoiceLanguageService = SarvamVoiceLanguageService
