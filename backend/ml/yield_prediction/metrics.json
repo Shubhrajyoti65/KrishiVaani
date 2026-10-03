@@ -10,37 +10,29 @@
   ],
   "target": "Yield (tonnes/hectare)",
   "target_formula": "Production / Area",
-  "training_date": "2026-09-29 04:29:38",
+  "training_date": "2026-10-03 02:48:42",
   "best_model": "XGBoost Regressor",
   "all_candidates": {
     "Random Forest Regressor": {
       "metrics": {
-        "mae": 1.255,
-        "rmse": 3.8309,
-        "r2": 0.8969,
+        "mae": 1.2548,
+        "rmse": 3.8288,
+        "r2": 0.897,
         "target_unit": "tonnes/hectare"
       }
     },
     "XGBoost Regressor": {
       "metrics": {
-        "mae": 1.2594,
-        "rmse": 3.6962,
+        "mae": 1.2622,
+        "rmse": 3.6964,
         "r2": 0.904,
-        "target_unit": "tonnes/hectare"
-      }
-    },
-    "CatBoost Regressor": {
-      "metrics": {
-        "mae": 1.5722,
-        "rmse": 4.0069,
-        "r2": 0.8872,
         "target_unit": "tonnes/hectare"
       }
     }
   },
   "selected_metrics": {
-    "mae": 1.2594,
-    "rmse": 3.6962,
+    "mae": 1.2622,
+    "rmse": 3.6964,
     "r2": 0.904,
     "target_unit": "tonnes/hectare"
   }

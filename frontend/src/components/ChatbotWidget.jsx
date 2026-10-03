@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Mic, MicOff, Bot, User, Loader, Sprout, CloudSun, TrendingUp, Satellite } from 'lucide-react';
+import { MessageSquare, Send, Mic, MicOff, Bot, User, Loader, Sprout, CloudSun, TrendingUp, Satellite, Volume2, VolumeX } from 'lucide-react';
 
 const LANG_GREET = {
   en: "Hello! I'm KrishiVaani AI Assistant 🌾 I can help you with crop recommendations, weather advisories, yield estimates, and disease diagnosis. How can I help you today?",
@@ -21,11 +21,52 @@ export default function ChatbotWidget({ currentLang = 'en' }) {
   const [input,      setInput]     = useState('');
   const [loading,    setLoading]   = useState(false);
   const [listening,  setListening] = useState(false);
+  const [playingId,  setPlayingId] = useState(null);
   const bottomRef = useRef(null);
+  const audioRef  = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  const speakMessage = async (msgId, text) => {
+    if (playingId === msgId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setPlayingId(null);
+      return;
+    }
+
+    try {
+      setPlayingId(msgId);
+      const res = await fetch('http://localhost:8000/api/v1/voice-language/text-to-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text.slice(0, 350),
+          language: currentLang,
+          gender: 'female'
+        })
+      });
+      if (!res.ok) throw new Error('TTS failed');
+      const data = await res.json();
+      if (data.audio_base64) {
+        if (audioRef.current) audioRef.current.pause();
+        const snd = new Audio(`data:${data.audio_format || 'audio/mp3'};base64,${data.audio_base64}`);
+        audioRef.current = snd;
+        snd.onended = () => setPlayingId(null);
+        snd.onerror = () => setPlayingId(null);
+        await snd.play();
+      } else {
+        setPlayingId(null);
+      }
+    } catch (e) {
+      console.warn("Voice playback error:", e);
+      setPlayingId(null);
+    }
+  };
 
   const send = async (text = input.trim()) => {
     if (!text || loading) return;
@@ -167,8 +208,28 @@ export default function ChatbotWidget({ currentLang = 'en' }) {
                   }}>
                     {msg.text}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem', textAlign: msg.role === 'user' ? 'right' : 'left', paddingInline: '0.25rem' }}>
-                    {fmt(msg.ts)}
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem', textAlign: msg.role === 'user' ? 'right' : 'left', paddingInline: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: '0.5rem' }}>
+                    <span>{fmt(msg.ts)}</span>
+                    {msg.role === 'assistant' && (
+                      <button
+                        onClick={() => speakMessage(msg.id, msg.text)}
+                        title={playingId === msg.id ? "Stop voice" : "Listen in voice (Sarvam AI)"}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '0.1rem 0.3rem',
+                          color: playingId === msg.id ? 'var(--green-primary)' : 'var(--text-muted)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        {playingId === msg.id ? <VolumeX size={13} color="var(--green-primary)" /> : <Volume2 size={13} />}
+                        <span style={{ fontSize: '0.68rem', fontWeight: 600 }}>{playingId === msg.id ? 'Playing…' : 'Listen'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

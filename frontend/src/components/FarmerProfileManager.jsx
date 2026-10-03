@@ -22,6 +22,7 @@ export default function FarmerProfileManager() {
     state: 'Punjab',
     district: 'Ludhiana',
     village: 'Samrala',
+    land_area_acres: 4.5,
     farm_size_acres: 4.5,
     soil_type: 'Alluvial',
     irrigation_source: 'Canal',
@@ -37,6 +38,9 @@ export default function FarmerProfileManager() {
     phosphorus: 42.0,
     potassium: 36.5,
     ph: 7.2,
+    temperature: 25.0,
+    humidity: 65.0,
+    rainfall: 120.0,
     organic_carbon_percent: 0.55,
     electrical_conductivity: 0.35,
     recommendations: 'Apply recommended MOP top-dressing.'
@@ -79,6 +83,7 @@ export default function FarmerProfileManager() {
       const data = await res.json();
       setFarmer(data);
       localStorage.setItem('krishivaani_farmer_phone', phone);
+      localStorage.setItem('krishivaani_farmer_id', data.id);
       fetchHistory(data.id);
     } catch (err) {
       setError(err.message);
@@ -91,7 +96,7 @@ export default function FarmerProfileManager() {
     try {
       const [soilRes, cropRes] = await Promise.all([
         fetch(`http://localhost:8000/api/v1/farmers/${farmerId}/soil-tests`),
-        fetch(`http://localhost:8000/api/v1/farmers/${farmerId}/crops-history`)
+        fetch(`http://localhost:8000/api/v1/farmers/${farmerId}/farm-history`)
       ]);
       if (soilRes.ok) setSoilTests(await soilRes.json());
       if (cropRes.ok) setCropHistory(await cropRes.json());
@@ -105,10 +110,14 @@ export default function FarmerProfileManager() {
     setActionLoading(true);
     setError(null);
     try {
+      const payload = {
+        ...regForm,
+        land_area_acres: Number(regForm.land_area_acres || regForm.farm_size_acres || 1.0)
+      };
       const res = await fetch('http://localhost:8000/api/v1/farmers/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regForm),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const errData = await res.json();
@@ -117,6 +126,7 @@ export default function FarmerProfileManager() {
       const data = await res.json();
       setFarmer(data);
       localStorage.setItem('krishivaani_farmer_phone', data.phone_number);
+      localStorage.setItem('krishivaani_farmer_id', data.id);
       setSuccessMsg('Farmer profile registered successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
       fetchHistory(data.id);
@@ -132,12 +142,19 @@ export default function FarmerProfileManager() {
     if (!farmer) return;
     setActionLoading(true);
     try {
+      const payload = {
+        ...soilForm,
+        notes: soilForm.recommendations || 'Soil test logged'
+      };
       const res = await fetch(`http://localhost:8000/api/v1/farmers/${farmer.id}/soil-tests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(soilForm),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Failed to log soil test');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Failed to log soil test');
+      }
       setSuccessMsg('Soil test logged successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
       fetchHistory(farmer.id);
@@ -153,12 +170,25 @@ export default function FarmerProfileManager() {
     if (!farmer) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/farmers/${farmer.id}/crops-history`, {
+      const payload = {
+        crop: cropForm.crop_name,
+        season: cropForm.season,
+        year: Number(cropForm.year),
+        area_acres: Number(cropForm.area_acres),
+        yield_obtained_quintals: Number(cropForm.yield_quintals),
+        production_cost_inr: Number(cropForm.cost_incurred_inr || 0),
+        revenue_inr: Number(cropForm.gross_return_inr || (cropForm.yield_quintals * (cropForm.market_price_per_quintal_inr || 0))),
+        soil_condition_note: cropForm.notes
+      };
+      const res = await fetch(`http://localhost:8000/api/v1/farmers/${farmer.id}/farm-history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cropForm),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Failed to log crop history');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Failed to log crop history');
+      }
       setSuccessMsg('Harvest history recorded successfully!');
       setTimeout(() => setSuccessMsg(null), 4000);
       fetchHistory(farmer.id);
@@ -494,19 +524,19 @@ export default function FarmerProfileManager() {
                       <div key={record.id} style={{ background: 'var(--bg-section)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--green-primary)' }}>
-                            {record.crop_name} · <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{record.season} {record.year}</span>
+                            {record.crop || record.crop_name} · <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{record.season} {record.year}</span>
                           </div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                            Harvested: <strong>{record.yield_quintals} Quintals</strong> across {record.area_acres} Acres
+                            Harvested: <strong>{record.yield_obtained_quintals ?? record.yield_quintals} Quintals</strong> across {record.area_acres} Acres
                           </div>
                         </div>
 
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                            ₹{record.market_price_per_quintal_inr ? (record.yield_quintals * record.market_price_per_quintal_inr).toLocaleString('en-IN') : '—'}
+                            ₹{record.revenue_inr ? Number(record.revenue_inr).toLocaleString('en-IN') : (record.market_price_per_quintal_inr ? ((record.yield_obtained_quintals ?? record.yield_quintals) * record.market_price_per_quintal_inr).toLocaleString('en-IN') : '—')}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            @ ₹{record.market_price_per_quintal_inr}/Q
+                            {record.yield_per_acre_quintals ? `${record.yield_per_acre_quintals} Q/acre` : (record.market_price_per_quintal_inr ? `@ ₹${record.market_price_per_quintal_inr}/Q` : '')}
                           </div>
                         </div>
                       </div>

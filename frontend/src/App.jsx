@@ -94,7 +94,7 @@ const STATS = [
   { icon: Users,      value: '2.8M+', label: 'Farmers Served' },
   { icon: Star,       value: '4.9/5', label: 'Satisfaction Score' },
   { icon: TrendingUp, value: '38%',   label: 'Avg Yield Increase' },
-  { icon: Award,      value: 'Govt',  label: 'Bhashini Certified' },
+  { icon: Award,      value: 'AI',    label: 'Sarvam AI Voice' },
 ];
 
 export default function App() {
@@ -430,7 +430,7 @@ export default function App() {
             </div>
             <div>
               <div style={{ color: '#d4e8c2', fontWeight: 600, marginBottom: '0.75rem' }}>Technology</div>
-              {['FastAPI Backend', 'React Frontend', 'MongoDB Database', 'LangChain AI', 'Bhashini Voice'].map(t => (
+              {['FastAPI Backend', 'React Frontend', 'MongoDB Database', 'XGBoost ML', 'Sarvam AI Voice'].map(t => (
                 <div key={t} style={{ marginBottom: '0.4rem' }}>{t}</div>
               ))}
             </div>
@@ -446,7 +446,7 @@ export default function App() {
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
             <span>© 2025 KrishiVaani — AI Smart Farming Platform</span>
-            <span>Built with FastAPI · React · MongoDB · Scikit-Learn · Bhashini · Sentinel-2</span>
+            <span>Built with FastAPI · React · MongoDB · XGBoost · Sarvam AI · Sentinel-2</span>
           </div>
         </div>
       </footer>

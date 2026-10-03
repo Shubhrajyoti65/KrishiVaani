@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info, DollarSign, PieChart, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info, DollarSign, PieChart, ShieldCheck, Save, CheckCircle, Store } from 'lucide-react';
+import { logCropToFarmHistory } from '../utils/farmHistoryService';
 
 const CROPS_MSP = {
   Rice:      { msp: 2183, season: 'Kharif', yield_range: '2.5–4.5' },
@@ -47,6 +48,26 @@ export default function YieldCalculator() {
   const [costResult,  setCostResult]  = useState(null);
   const [costLoading, setCostLoading] = useState(false);
   const [costError,   setCostError]   = useState(null);
+  const [mandiData,   setMandiData]   = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchMandi = async () => {
+      try {
+        const cropToUse = tab === 'cost-returns' ? costForm.crop : form.crop;
+        const stateToUse = tab === 'cost-returns' ? costForm.state : form.state;
+        const res = await fetch(`http://localhost:8000/api/v1/mandi/prices?commodity=${cropToUse}&state=${stateToUse}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (active) setMandiData(data);
+        }
+      } catch (e) {
+        // Silently ignore if offline
+      }
+    };
+    fetchMandi();
+    return () => { active = false; };
+  }, [form.crop, form.state, costForm.crop, costForm.state, tab]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -125,6 +146,57 @@ export default function YieldCalculator() {
       setCostError(err.message || 'Failed to calculate production cost.');
     } finally {
       setCostLoading(false);
+    }
+  };
+
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null);
+
+  const handleSaveCostResult = async () => {
+    if (!costResult) return;
+    setSaveLoading(true);
+    setSaveMsg(null);
+    try {
+      await logCropToFarmHistory({
+        crop: costResult.crop,
+        season: costResult.season || 'Rabi',
+        year: new Date().getFullYear(),
+        area_acres: costResult.area_acres,
+        yield_obtained_quintals: Number((costResult.expected_yield_quintals_per_acre * costResult.area_acres).toFixed(1)),
+        production_cost_inr: costResult.total_production_cost_inr,
+        revenue_inr: costResult.estimated_revenue_inr,
+        soil_condition_note: `Calculated Gross Return: ₹${costResult.estimated_gross_return_inr?.toFixed(0)}, Profit Margin: ${costResult.profit_margin_percent}%`
+      });
+      setSaveMsg('Farm economics saved to your profile history!');
+      setTimeout(() => setSaveMsg(null), 4000);
+    } catch (err) {
+      setSaveMsg(`Error: ${err.message}`);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleSaveYieldResult = async () => {
+    if (!result) return;
+    setSaveLoading(true);
+    setSaveMsg(null);
+    try {
+      await logCropToFarmHistory({
+        crop: result.crop || form.crop,
+        season: result.season || 'Rabi',
+        year: new Date().getFullYear(),
+        area_acres: result.area || form.area,
+        yield_obtained_quintals: Number(result.estimated_yield_quintals || 0),
+        production_cost_inr: Math.round(Number(result.estimated_revenue_inr || 0) * 0.38),
+        revenue_inr: Number(result.estimated_revenue_inr || 0),
+        soil_condition_note: `XGBoost Yield Forecast at MSP ₹${result.msp_price_per_quintal || CROPS_MSP[form.crop]?.msp}/Q`
+      });
+      setSaveMsg('Yield forecast saved to your profile history!');
+      setTimeout(() => setSaveMsg(null), 4000);
+    } catch (err) {
+      setSaveMsg(`Error: ${err.message}`);
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -228,6 +300,22 @@ export default function YieldCalculator() {
                 </div>
               </div>
 
+              {/* APMC Mandi Rate in Tab 1 */}
+              {mandiData?.records?.length > 0 && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius)', padding: '0.65rem 0.85rem', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: '#166534', fontWeight: 700 }}>
+                      <Store size={14} color="#15803d" />
+                      <span>{mandiData.records[0].market} ({mandiData.records[0].state}):</span>
+                    </div>
+                    <strong style={{ color: '#15803d', fontSize: '0.9rem' }}>₹{mandiData.records[0].modal_price}/qtl</strong>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#166534' }}>
+                    {mandiData.records[0].advisory}
+                  </div>
+                </div>
+              )}
+
               {/* Optional User Operational Overrides */}
               <div style={{ background: 'var(--bg-section)', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem' }}>
                 <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
@@ -322,6 +410,38 @@ export default function YieldCalculator() {
                       <div style={{ opacity: 0.75, fontSize: '0.72rem' }}>Cost / Acre</div>
                       <div style={{ fontWeight: 700 }}>₹{costResult.cost_per_acre_inr?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
                     </div>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleSaveCostResult}
+                      disabled={saveLoading}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        width: '100%',
+                        padding: '0.6rem 1rem',
+                        background: '#ffffff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: 'var(--green-primary)',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {saveLoading ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
+                      Save Economics to Farm History
+                    </button>
+                    {saveMsg && (
+                      <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: saveMsg.startsWith('Error') ? '#fca5a5' : '#d4f0c0', fontWeight: 600, textAlign: 'center' }}>
+                        {saveMsg}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -424,14 +544,32 @@ export default function YieldCalculator() {
 
               {/* Crop MSP info pill */}
               {CROPS_MSP[form.crop] && (
-                <div style={{ background: 'var(--gold-pale)', border: '1px solid #e8d080', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: 'var(--gold-pale)', border: '1px solid #e8d080', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#9a6e0a', fontWeight: 600 }}>Govt MSP (2024–25): </span>
+                    <span style={{ fontSize: '0.8rem', color: '#9a6e0a', fontWeight: 600 }}>Govt Statutory MSP (2024–25): </span>
                     <strong style={{ color: '#7a5500' }}>₹{CROPS_MSP[form.crop].msp} / quintal</strong>
                   </div>
                   <span style={{ fontSize: '0.75rem', background: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#9a6e0a' }}>
                     {CROPS_MSP[form.crop].season}
                   </span>
+                </div>
+              )}
+
+              {/* Live APMC Mandi Rate vs MSP Card */}
+              {mandiData?.records?.length > 0 && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#166534', fontWeight: 700 }}>
+                      <Store size={15} color="#15803d" />
+                      <span>APMC Mandi: {mandiData.records[0].market} ({mandiData.records[0].district || mandiData.records[0].state})</span>
+                    </div>
+                    <strong style={{ color: '#15803d', fontSize: '0.95rem' }}>
+                      ₹{mandiData.records[0].modal_price} / qtl
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#166534', lineHeight: 1.4 }}>
+                    {mandiData.records[0].advisory}
+                  </div>
                 </div>
               )}
 
@@ -481,6 +619,35 @@ export default function YieldCalculator() {
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>MSP Price / Quintal</div>
                   </div>
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveYieldResult}
+                    disabled={saveLoading}
+                    className="btn btn-outline"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      width: '100%',
+                      padding: '0.65rem 1rem',
+                      borderColor: 'var(--green-primary)',
+                      color: 'var(--green-primary)',
+                      fontWeight: 600,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {saveLoading ? <Loader size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
+                    Save Yield Forecast to Farm History
+                  </button>
+                  {saveMsg && (
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: saveMsg.startsWith('Error') ? '#dc2626' : '#16a34a', fontWeight: 600, textAlign: 'center' }}>
+                      {saveMsg}
+                    </div>
+                  )}
                 </div>
 
                 <div className="card card-cream">

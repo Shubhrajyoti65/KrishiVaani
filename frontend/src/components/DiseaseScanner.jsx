@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Leaf, Upload, Camera, CheckCircle, AlertCircle, Loader, FlaskConical, Sprout, X, Cpu, ShieldCheck, Bug, RefreshCw } from 'lucide-react';
+import { Leaf, Upload, Camera, CheckCircle, AlertCircle, Loader, FlaskConical, Sprout, X, Cpu, ShieldCheck, Bug, RefreshCw, BookOpen, Save } from 'lucide-react';
+import { logCropToFarmHistory } from '../utils/farmHistoryService';
 
 const SEV_COLOR = {
   None:     { bg: 'var(--green-bg)',  border: 'var(--green-pale)',  text: 'var(--green-primary)' },
@@ -36,6 +37,8 @@ export default function DiseaseScanner() {
   const [error,        setError]        = useState(null);
   const [dragOver,     setDragOver]     = useState(false);
   const [selectedCrop, setSelectedCrop] = useState('');
+  const [saveLoading,  setSaveLoading]  = useState(false);
+  const [saveMsg,      setSaveMsg]      = useState(null);
   const fileRef = useRef(null);
 
   const handleFile = (file) => {
@@ -96,6 +99,31 @@ export default function DiseaseScanner() {
       setResult(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveDiagnosis = async () => {
+    if (!result) return;
+    setSaveLoading(true);
+    setSaveMsg(null);
+    try {
+      await logCropToFarmHistory({
+        crop: result.crop || 'Crop',
+        disease_experienced: `${result.disease_name || result.condition_type} (Severity: ${result.severity})`,
+        soil_condition_note: `DigiGreen Vision AI Diagnosis: ${result.disease_name} (${((result.confidence || 0.95)*100).toFixed(1)}% conf). Severity: ${result.severity}. PHI: ${(result.llm_grounded_guidance?.cibrc_chemical_management || [])[0]?.phi_harvest_interval || 'Standard safety interval'}.`,
+        season: 'Current',
+        year: new Date().getFullYear(),
+        area_acres: 1.0,
+        yield_obtained_quintals: 0,
+        production_cost_inr: 0,
+        revenue_inr: 0
+      });
+      setSaveMsg('Diagnosis logged to farm history successfully!');
+      setTimeout(() => setSaveMsg(null), 4000);
+    } catch (err) {
+      setSaveMsg(`Error: ${err.message}`);
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -327,6 +355,38 @@ export default function DiseaseScanner() {
                     </div>
                   </div>
                 )}
+
+                <div style={{ marginTop: '0.9rem', paddingTop: '0.75rem', borderTop: `1px solid ${sev.border}` }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveDiagnosis}
+                    disabled={saveLoading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      width: '100%',
+                      padding: '0.55rem 1rem',
+                      background: '#ffffff',
+                      border: `1.5px solid ${sev.text}`,
+                      borderRadius: '6px',
+                      color: sev.text,
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    {saveLoading ? <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />}
+                    Log Diagnosis & Advisory to Farm Profile
+                  </button>
+                  {saveMsg && (
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.76rem', color: saveMsg.startsWith('Error') ? '#dc2626' : '#166534', fontWeight: 600, textAlign: 'center' }}>
+                      {saveMsg}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Detected Pest Warning Card */}
@@ -434,6 +494,37 @@ export default function DiseaseScanner() {
                   <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.8rem', color: '#64748b', lineHeight: 1.5 }}>
                     {result.safety_instructions.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
+                </div>
+              )}
+
+              {/* Authoritative Agricultural RAG Citations */}
+              {result.rag_citations?.length > 0 && (
+                <div className="card" style={{ marginBottom: '1rem', background: '#f0fdfa', border: '1px solid #ccfbf1' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#0f766e', fontWeight: 700, fontSize: '0.88rem', marginBottom: '0.6rem' }}>
+                    <BookOpen size={16} /> Authoritative Agricultural RAG Grounding
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {result.rag_citations.map((c, i) => (
+                      <div key={i} style={{ background: '#fff', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #e6fffa', fontSize: '0.8rem' }}>
+                        <div style={{ fontWeight: 600, color: '#115e59', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>[{c.doc_id}] {c.title}</span>
+                          <span style={{ fontSize: '0.72rem', color: '#0d9488', background: '#ccfbf1', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>Score: {c.relevance_score}</span>
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', margin: '0.2rem 0' }}>Authority: {c.source} · Crop: {c.crop} · Region: {c.region}</div>
+                        <div style={{ color: '#334155', fontStyle: 'italic', fontSize: '0.76rem', lineHeight: 1.4 }}>"{c.snippet}"</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Evidence-Grounded Field Guidance */}
+              {result.llm_grounded_guidance && (
+                <div className="card" style={{ marginBottom: '1rem', background: '#fdfbf7', border: '1px solid #f2e8dc', fontSize: '0.82rem', lineHeight: 1.6, color: '#451a03' }}>
+                  <div style={{ fontWeight: 700, color: '#78350f', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                    📋 Integrated Agronomic Evidence Summary
+                  </div>
+                  <div style={{ whiteSpace: 'pre-line' }}>{result.llm_grounded_guidance}</div>
                 </div>
               )}
 
