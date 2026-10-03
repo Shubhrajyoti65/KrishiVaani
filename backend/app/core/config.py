@@ -9,7 +9,13 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "KrishiVaani API"
     API_V1_STR: str = "/api/v1"
     DEBUG: bool = True
-    ALLOWED_ORIGINS: List[str] = ["*"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8080",
+    ]
 
     # MongoDB
     MONGODB_URL: str = "mongodb://localhost:27017"
@@ -26,10 +32,8 @@ class Settings(BaseSettings):
     # Weather
     OPENWEATHERMAP_API_KEY: Optional[str] = None
 
-    # Bhashini Voice/Translation — optional, mocked if absent
-    BHASHINI_USER_ID: Optional[str] = None
-    BHASHINI_API_KEY: Optional[str] = None
-    BHASHINI_PIPELINE_ID: str = "64392f08f21d092df78502f9"
+    # Sarvam AI Voice, Translation & Speech (STT: saaras:v1, TTS: bulbul:v1, Translation: mayura:v1)
+    SARVAM_API_KEY: Optional[str] = None
 
     # Google Earth Engine — optional, simulated if absent
     EE_PROJECT: Optional[str] = None

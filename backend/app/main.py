@@ -18,12 +18,19 @@ from backend.app.services.crop_rotation.router import router as rotation_router
 from backend.app.services.agricultural_rag.router import router as rag_router
 from backend.app.services.crop_planning.router import router as planning_router
 from backend.app.services.production_cost.router import router as cost_router
+from backend.app.services.mandi_service.router import router as mandi_router
+from backend.app.services.mandi_service.repository import mandi_repository
 from backend.app.services.chatbot_agent.router import agri_chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize DB connection
     await db_manager.connect()
+    # Seed initial Mandi price records in MongoDB/cache
+    try:
+        await mandi_repository.seed_initial_data()
+    except Exception as e:
+        pass
     # Pre-warm DigiGreen DaViT-Base model asynchronously
     try:
         import asyncio
@@ -79,6 +86,7 @@ app.include_router(rotation_router, prefix=settings.API_V1_STR)
 app.include_router(rag_router, prefix=settings.API_V1_STR)
 app.include_router(planning_router, prefix=settings.API_V1_STR)
 app.include_router(cost_router, prefix=settings.API_V1_STR)
+app.include_router(mandi_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn

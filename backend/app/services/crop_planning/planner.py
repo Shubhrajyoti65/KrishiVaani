@@ -128,6 +128,102 @@ ROTATION_STRATEGIES = {
             "yield_est": "80 – 120 quintals/acre",
             "soil_impact": "Intercultural operations aerate the top 20 cm of root zone."
         }
+    },
+    "chickpea": {
+        "year2": {
+            "crop": "Mustard",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "Oilseed rotation following legume exploits mineralized nitrogen and breaks soil pathogen cycles.",
+            "soil_compat": "Well suited to conserved-moisture loamy seedbeds.",
+            "water": "Low to medium water requirement.",
+            "pest_break": "Glucosinolate bio-fumigant effect suppresses Fusarium oxysporum wilt spores.",
+            "yield_est": "6.0 – 9.0 quintals/acre",
+            "soil_impact": "Extracts subsoil potassium while leaving surface soil structurally intact."
+        },
+        "year3": {
+            "crop": "Wheat",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "Major food cereal capitalizing on fully renewed mycorrhizal soil community.",
+            "soil_compat": "High productivity on restored, aerated loam.",
+            "water": "Medium (3-4 irrigations).",
+            "pest_break": "Monocotyledonous rotation interrupts brassica disease inoculum.",
+            "yield_est": "18.0 – 24.0 quintals/acre",
+            "soil_impact": "Extensive root network maintains soil organic carbon equilibrium."
+        }
+    },
+    "sugarcane": {
+        "year2": {
+            "crop": "Mungbean (Green Gram)",
+            "tier": "High suitability",
+            "season": "Summer / Zaid",
+            "rationale": "Fast-maturing summer legume to rehabilitate soil after exhaustive sugarcane harvest.",
+            "soil_compat": "Improves organic matter and biological activity in heavy soils.",
+            "water": "Low to medium.",
+            "pest_break": "Starves sugarcane stalk and root borer larvae.",
+            "yield_est": "4.5 – 6.5 quintals/acre",
+            "soil_impact": "Supplies 40 kg biological Nitrogen per hectare and decomposes crop trash."
+        },
+        "year3": {
+            "crop": "Wheat",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "High-yielding cereal fitting smoothly into the restored field tilth.",
+            "soil_compat": "Thrives after legume green manuring.",
+            "water": "Medium.",
+            "pest_break": "Breaks red rot (Colletotrichum falcatum) fungal persistence.",
+            "yield_est": "16.0 – 22.0 quintals/acre",
+            "soil_impact": "Leaves fibrous stubble that prevents soil crusting."
+        }
+    },
+    "pigeonpeas": {
+        "year2": {
+            "crop": "Wheat",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "Cereal rotation taking full advantage of the deep taproot aeration and 40 kg N fixed by arhar.",
+            "soil_compat": "Excellent tilth and deep porosity created by pigeonpea root system.",
+            "water": "Medium.",
+            "pest_break": "Disrupts pod borer (Helicoverpa armigera) soil pupation.",
+            "yield_est": "18.0 – 24.0 quintals/acre",
+            "soil_impact": "Increases available phosphorus through mycorrhizal association."
+        },
+        "year3": {
+            "crop": "Cotton",
+            "tier": "Moderate suitability",
+            "season": "Kharif",
+            "rationale": "Cash crop rotation fitting semi-arid black and red soil agro-ecosystems.",
+            "soil_compat": "High suitability on deep, well-drained soils.",
+            "water": "Medium to rain-fed.",
+            "pest_break": "Different pest complex compared to cereal-pulse sequence.",
+            "yield_est": "7.0 – 11.0 quintals/acre",
+            "soil_impact": "Deep extraction balanced by prior leguminous enrichment."
+        }
+    },
+    "mungbean": {
+        "year2": {
+            "crop": "Wheat",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "Direct cereal successor utilizing legume residual fertility.",
+            "soil_compat": "Optimal for all alluvial and medium loamy tracts.",
+            "water": "Medium.",
+            "pest_break": "Clears pulse aphid and yellow mosaic virus reservoirs.",
+            "yield_est": "18.0 – 23.0 quintals/acre",
+            "soil_impact": "Increases microbial respiration and active carbon."
+        },
+        "year3": {
+            "crop": "Mustard",
+            "tier": "High suitability",
+            "season": "Rabi",
+            "rationale": "Oilseed diversity maintaining continuous field rotation.",
+            "soil_compat": "Good soil coverage with low nutrient mining.",
+            "water": "Low.",
+            "pest_break": "Reduces foliar blight incidence in subsequent cereals.",
+            "yield_est": "6.0 – 8.5 quintals/acre",
+            "soil_impact": "Bio-fumigation benefits topsoil health."
+        }
     }
 }
 
@@ -179,6 +275,19 @@ class CropPlanningEngine:
             y1_crop = alt["crop"]
             y1_suitability = alt["suitability"]
 
+        # Calculate dynamic yield estimate using XGBoost Yield Model
+        try:
+            from backend.ml.yield_prediction.predict import predict_yield_production
+            y1_yp = predict_yield_production(
+                crop=y1_crop,
+                state=req.state or "Punjab",
+                season=req.current_season or "Kharif",
+                area_acres=req.total_land_acres or 1.0
+            )
+            y1_yield_str = f"{y1_yp['predicted_yield_quintals_per_acre']} Q/acre (Est: {y1_yp['estimated_range']['quintals_per_acre']['min']}–{y1_yp['estimated_range']['quintals_per_acre']['max']} Q/acre)"
+        except Exception:
+            y1_yield_str = "Top-tier regional productivity under recommended fertilizer schedule."
+
         y1_item = YearPlanItem(
             year_label="Year 1 (Current Season)",
             season=req.current_season,
@@ -188,7 +297,7 @@ class CropPlanningEngine:
             soil_compatibility="Matches primary soil nutrient availability and seasonal temperature band.",
             water_requirement=f"Standard for {y1_crop}; fits {req.water_availability} irrigation infrastructure.",
             pest_disease_break_benefit="Establishes productive initial canopy while monitoring regional pest patterns.",
-            expected_yield_estimate="Top-tier regional productivity under recommended fertilizer schedule.",
+            expected_yield_estimate=y1_yield_str,
             soil_impact="Utilizes available nutrients; requires subsequent restorative rotation."
         )
 
@@ -202,6 +311,31 @@ class CropPlanningEngine:
         y2_dict = strat["year2"]
         y3_dict = strat["year3"]
 
+        # Dynamic XGBoost Yield Predictions for Year 2 & Year 3
+        try:
+            from backend.ml.yield_prediction.predict import predict_yield_production
+            y2_yp = predict_yield_production(
+                crop=y2_dict["crop"],
+                state=req.state or "Punjab",
+                season=y2_dict["season"],
+                area_acres=req.total_land_acres or 1.0
+            )
+            y2_yield_str = f"{y2_yp['predicted_yield_quintals_per_acre']} Q/acre (Est: {y2_yp['estimated_range']['quintals_per_acre']['min']}–{y2_yp['estimated_range']['quintals_per_acre']['max']} Q/acre)"
+        except Exception:
+            y2_yield_str = y2_dict.get("yield_est", "Standard regional productivity")
+
+        try:
+            from backend.ml.yield_prediction.predict import predict_yield_production
+            y3_yp = predict_yield_production(
+                crop=y3_dict["crop"],
+                state=req.state or "Punjab",
+                season=y3_dict["season"],
+                area_acres=req.total_land_acres or 1.0
+            )
+            y3_yield_str = f"{y3_yp['predicted_yield_quintals_per_acre']} Q/acre (Est: {y3_yp['estimated_range']['quintals_per_acre']['min']}–{y3_yp['estimated_range']['quintals_per_acre']['max']} Q/acre)"
+        except Exception:
+            y3_yield_str = y3_dict.get("yield_est", "Standard regional productivity")
+
         y2_item = YearPlanItem(
             year_label="Year 2 (Next Year)",
             season=y2_dict["season"],
@@ -211,7 +345,7 @@ class CropPlanningEngine:
             soil_compatibility=y2_dict["soil_compat"],
             water_requirement=y2_dict["water"],
             pest_disease_break_benefit=y2_dict["pest_break"],
-            expected_yield_estimate=y2_dict["yield_est"],
+            expected_yield_estimate=y2_yield_str,
             soil_impact=y2_dict["soil_impact"]
         )
 
@@ -224,7 +358,7 @@ class CropPlanningEngine:
             soil_compatibility=y3_dict["soil_compat"],
             water_requirement=y3_dict["water"],
             pest_disease_break_benefit=y3_dict["pest_break"],
-            expected_yield_estimate=y3_dict["yield_est"],
+            expected_yield_estimate=y3_yield_str,
             soil_impact=y3_dict["soil_impact"]
         )
 
