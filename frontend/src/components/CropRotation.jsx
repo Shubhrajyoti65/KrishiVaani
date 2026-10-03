@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { RefreshCw, Search, Loader, Info, CheckCircle, AlertCircle, Calendar, Layers, ShieldCheck, Sprout } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { RefreshCw, Search, Loader, Info, CheckCircle, AlertCircle, Calendar, Layers, ShieldCheck, Sprout, ArrowLeft } from 'lucide-react';
 
 const CROPS  = ['rice','wheat','maize','cotton','mustard','soybean','chickpea','sugarcane','potato','groundnut'];
 const SOILS  = ['Alluvial','Black','Red','Laterite','Sandy Loam','Clayey Loam','Loamy'];
@@ -8,7 +8,7 @@ const STATES = ['Punjab','Haryana','Uttar Pradesh','Bihar','Odisha','West Bengal
 const PRIORITY_COLOR = { 1: 'var(--green-primary)', 2: '#2563eb', 3: '#9a6e0a', 4: 'var(--text-muted)' };
 const PRIORITY_BG    = { 1: 'var(--green-bg)', 2: '#e8f0fc', 3: 'var(--gold-pale)', 4: 'var(--bg-section)' };
 
-export default function CropRotation() {
+export default function CropRotation({ onBack }) {
   const [activeMode, setActiveMode] = useState('multi-year'); // 'single-year' | 'multi-year'
 
   // Single-year quick rotation state
@@ -31,6 +31,21 @@ export default function CropRotation() {
   const [multiYearPlan, setMultiYearPlan]       = useState(null);
   const [multiYearLoading, setMultiYearLoading] = useState(false);
   const [multiYearError, setMultiYearError]     = useState(null);
+
+  const multiYearRef = useRef(null);
+  const singleYearRef = useRef(null);
+
+  useEffect(() => {
+    if (multiYearPlan && multiYearRef.current) {
+      multiYearRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [multiYearPlan]);
+
+  useEffect(() => {
+    if (result && singleYearRef.current) {
+      singleYearRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   const handleSearchSingle = async () => {
     setLoading(true);
@@ -86,7 +101,53 @@ export default function CropRotation() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <span className="section-label">Soil Health & Multi-Year Strategy</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to Dashboard"
+              title="Back to Dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--border-color)',
+                background: '#ffffff',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--green-bg)';
+                e.currentTarget.style.color = 'var(--green-primary)';
+                e.currentTarget.style.borderColor = 'var(--green-pale)';
+                e.currentTarget.style.transform = 'translateX(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.transform = 'translateX(0)';
+              }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
+          <span style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--green-primary)',
+          }}>
+            Soil Health & Multi-Year Strategy
+          </span>
+        </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Crop Rotation & Soil Improvement Planner</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Science-backed crop sequence planning to break pest cycles, replenish soil nutrients, and maximize long-term farm productivity.
@@ -254,7 +315,54 @@ export default function CropRotation() {
           )}
 
           {multiYearPlan && !multiYearLoading && (
-            <div className="animate-fade-in-up">
+            <div ref={multiYearRef} className="animate-fade-in-up" style={{ marginBottom: '2rem' }}>
+              {/* Calculation Status Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                color: '#166534',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '10px',
+                marginBottom: '1.25rem',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    color: '#ffffff',
+                    flexShrink: 0
+                  }}>
+                    <CheckCircle size={15} />
+                  </span>
+                  <span>3-Year Rotation Plan Generated — Agronomic Sequence & Soil Strategy Ready</span>
+                </div>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' }} />
+                  Strategy Ready
+                </span>
+              </div>
+
               {/* Strategy Header */}
               <div style={{ background: 'linear-gradient(135deg, var(--green-primary), #235223)', borderRadius: 'var(--radius-lg)', padding: '1.75rem', marginBottom: '1.75rem', color: '#fff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.75rem' }}>
@@ -431,7 +539,54 @@ export default function CropRotation() {
           )}
 
           {result && !loading && (
-            <div className="animate-fade-in-up">
+            <div ref={singleYearRef} className="animate-fade-in-up" style={{ marginBottom: '2rem' }}>
+              {/* Calculation Status Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                color: '#166534',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '10px',
+                marginBottom: '1.25rem',
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                boxShadow: '0 2px 8px rgba(22, 101, 52, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    color: '#ffffff',
+                    flexShrink: 0
+                  }}>
+                    <CheckCircle size={15} />
+                  </span>
+                  <span>Rotation Analysis Completed — Recommended Successor Crops Ready</span>
+                </div>
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' }} />
+                  Rotation Ready
+                </span>
+              </div>
+
               <div style={{ background: 'linear-gradient(135deg, var(--brown), #a06840)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', marginBottom: '1.5rem', color: '#fff', display: 'flex', gap: '1rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>After {result.previous_crop}</div>

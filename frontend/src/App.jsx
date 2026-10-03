@@ -13,7 +13,7 @@ import FarmerProfileManager from './components/FarmerProfileManager';
 import {
   Sprout, LineChart, Leaf, CloudSun, Satellite, MessageSquare,
   FlaskConical, CalendarDays, RefreshCw, User,
-  ArrowRight, Star, Users, TrendingUp, Award, ChevronRight, Zap
+  ArrowRight, ArrowLeft, Star, Users, TrendingUp, Award, ChevronRight, Zap
 } from 'lucide-react';
 
 /* ── Feature cards for the dashboard grid ── */
@@ -376,28 +376,18 @@ export default function App() {
              INDIVIDUAL FEATURE TABS
         ══════════════════════════════════════ */}
         {activeTab !== 'dashboard' && (
-          <div style={{ padding: '2.5rem 0 4rem' }}>
+          <div style={{ padding: '2rem 0 3.5rem' }}>
             <div className="container">
-              {/* Breadcrumb */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                <button
-                  onClick={() => setActiveTab('dashboard')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--green-primary)', fontWeight: 600, fontSize: '0.875rem', padding: 0 }}
-                >
-                  ← Back to Dashboard
-                </button>
-              </div>
-
-              {activeTab === 'crop-rec'   && <CropRecommendationCard />}
-              {activeTab === 'yield'      && <YieldCalculator />}
-              {activeTab === 'disease'    && <DiseaseScanner />}
-              {activeTab === 'weather'    && <WeatherWidget />}
-              {activeTab === 'satellite'  && <SatelliteTracker />}
-              {activeTab === 'chatbot'    && <ChatbotWidget currentLang={currentLang} />}
-              {activeTab === 'fertilizer' && <FertilizerAdvisor />}
-              {activeTab === 'calendar'   && <CropCalendar />}
-              {activeTab === 'rotation'   && <CropRotation />}
-              {activeTab === 'profile'    && <FarmerProfileManager />}
+              {activeTab === 'crop-rec'   && <CropRecommendationCard onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'yield'      && <YieldCalculator onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'disease'    && <DiseaseScanner onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'weather'    && <WeatherWidget onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'satellite'  && <SatelliteTracker onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'chatbot'    && <ChatbotWidget currentLang={currentLang} onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'fertilizer' && <FertilizerAdvisor onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'calendar'   && <CropCalendar onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'rotation'   && <CropRotation onBack={() => setActiveTab('dashboard')} />}
+              {activeTab === 'profile'    && <FarmerProfileManager onBack={() => setActiveTab('dashboard')} />}
             </div>
           </div>
         )}
