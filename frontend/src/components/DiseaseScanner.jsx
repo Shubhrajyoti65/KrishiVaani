@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Leaf, Upload, Camera, CheckCircle, AlertCircle, Loader, FlaskConical, Sprout, X, Cpu, ShieldCheck, Bug, RefreshCw, BookOpen, Save, ArrowLeft } from 'lucide-react';
 import { logCropToFarmHistory } from '../utils/farmHistoryService';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const SEV_COLOR = {
   None:     { bg: 'var(--green-bg)',           border: 'var(--green-pale)',       text: 'var(--green-primary)' },
@@ -194,12 +195,45 @@ export default function DiseaseScanner({ onBack }) {
           </span>
         </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Leaf Disease Scanner</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
           Select your plant type and upload a photo of your leaf. DigiGreen AI will diagnose diseases and provide organic & chemical remedies.
         </p>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '24px', padding: '0.3rem 0.85rem', fontSize: '0.8rem', color: '#166534', fontWeight: 600 }}>
-          <Cpu size={15} color="#16a34a" />
-          <span>Powered by DigiGreen Multi-Task Vision AI (DaViT-Base) • 110 Crops • 285 Diseases • 92 Pests</span>
+
+        {/* Havens-Inspired Macro Botanical Diagnostic Banner */}
+        <div
+          className="card-glass"
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.85) 100%), url("${AGRI_IMAGES.healthyLeaf}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            padding: '1.75rem 2rem',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
+          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(34, 197, 94, 0.22)',
+                color: '#6ee7b7',
+                border: '1px solid rgba(110, 231, 183, 0.35)',
+                marginBottom: '0.75rem',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🔬 Computer Vision Multi-Task Vision AI (DaViT-Base)
+            </span>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+              Precision Plant Pathology Diagnostics
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
+              Trained on 110 crops, 285 plant diseases, and 92 pest attacks. Snap a photo or upload an image to receive instant diagnostic confidence and ICAR/CIBRC approved organic remedies.
+            </p>
+          </div>
         </div>
       </div>
 

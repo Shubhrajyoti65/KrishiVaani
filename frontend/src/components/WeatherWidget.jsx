@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import SearchableSelect from './SearchableSelect';
 import { MAJOR_DISTRICTS_AND_CITIES } from '../data/agriData';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const CONDITION_ICON = {
   heatwave: '🌡️',
@@ -339,9 +340,46 @@ export default function WeatherWidget({ compact = false, onBack }) {
           </span>
         </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Weather & Extreme Climate Advisory</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
           Search any district across India or type any city name to get live meteorological observations, 5-day precision agromet forecasts, and ICAR farming advisories.
         </p>
+
+        {/* Havens-Inspired Atmospheric Agromet Banner */}
+        <div
+          className="card-glass"
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.82) 100%), url("${AGRI_IMAGES.weatherLandscape}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            padding: '1.75rem 2rem',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
+          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(37, 99, 235, 0.22)',
+                color: '#93c5fd',
+                border: '1px solid rgba(147, 197, 253, 0.35)',
+                marginBottom: '0.75rem',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🛰️ Hyperlocal India Meteorological Department & Satellite Radar
+            </span>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+              Agricultural Meteorology & Severe Storm Alerts
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
+              Real-time atmospheric observations including heatwave warnings, frost index, rainfall accumulation, wind velocity, and ICAR agromet bulletins for field protection.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Search Header Bar */}

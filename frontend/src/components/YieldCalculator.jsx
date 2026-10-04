@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, TrendingUp, IndianRupee, Calculator, Loader, AlertCircle, ChevronDown, Info, DollarSign, PieChart, ShieldCheck, Save, CheckCircle, Store, ArrowLeft } from 'lucide-react';
 import { logCropToFarmHistory } from '../utils/farmHistoryService';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const CROPS_MSP = {
   Rice:      { msp: 2183, season: 'Kharif', yield_range: '2.5–4.5' },
@@ -266,9 +267,46 @@ export default function YieldCalculator({ onBack }) {
           </span>
         </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Cultivation Cost & Revenue Calculator</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
           Calculate deterministic operational costs, forecast MSP harvest revenues, and compute gross net returns per acre.
         </p>
+
+        {/* Havens-Inspired Harvest & Soil Economics Banner */}
+        <div
+          className="card-glass"
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.84) 100%), url("${AGRI_IMAGES.harvestGrain}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            padding: '1.75rem 2rem',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
+          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(234, 179, 8, 0.22)',
+                color: '#fde047',
+                border: '1px solid rgba(253, 224, 71, 0.35)',
+                marginBottom: '0.75rem',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🌾 Commission for Agricultural Costs & Prices (CACP)
+            </span>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+              Production Economics & MSP Profit Maximizer
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
+              Model comprehensive C2 cultivation costs across seeds, fertilizers, machinery, and labour alongside live Indian government Minimum Support Price (MSP) harvest projections.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs Switcher */}
