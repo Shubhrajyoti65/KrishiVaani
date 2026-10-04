@@ -10,16 +10,15 @@ import FertilizerAdvisor from './components/FertilizerAdvisor';
 import CropCalendar from './components/CropCalendar';
 import CropRotation from './components/CropRotation';
 import FarmerProfileManager from './components/FarmerProfileManager';
-import { AGRI_IMAGES, getHeroOverlay } from './data/agriImages';
+import { AGRI_IMAGES, getHeroOverlay, getBannerOverlay } from './data/agriImages';
 import {
   Sprout, LineChart, Leaf, CloudSun, Satellite, MessageSquare,
   FlaskConical, CalendarDays, RefreshCw, User,
-  ArrowRight, ArrowLeft, Star, Users, TrendingUp, Award, ChevronRight,
-  Zap, ShieldCheck, CheckCircle2, Sparkles, Layers, Activity,
-  Cpu, MapPin, Droplets, Thermometer, Wind, Check
+  ArrowRight, Star, Users, TrendingUp, Award, ChevronRight,
+  ShieldCheck, CheckCircle2, Sparkles, Cpu
 } from 'lucide-react';
 
-/* ── Platform modules for the dashboard / capabilities grid ── */
+/* ── Havens-Inspired Platform Capabilities with Curated Agricultural Photography ── */
 const FEATURES = [
   {
     id: 'crop-rec',
@@ -29,7 +28,8 @@ const FEATURES = [
     desc: 'Soil NPK, pH & climate-matched crop prediction using Random Forest ML calibrated for Indian soils.',
     stat: '22 Crops',
     statLabel: 'AI Supported',
-    accent: 'var(--green-primary)'
+    accent: 'var(--green-primary)',
+    image: AGRI_IMAGES.greenPaddy,
   },
   {
     id: 'yield',
@@ -39,7 +39,8 @@ const FEATURES = [
     desc: 'Harvest yield forecast with live Indian government Minimum Support Price (MSP) profit estimation.',
     stat: '₹ MSP',
     statLabel: 'Live Pricing',
-    accent: 'var(--gold)'
+    accent: 'var(--gold)',
+    image: AGRI_IMAGES.harvestGrain,
   },
   {
     id: 'fertilizer',
@@ -49,7 +50,8 @@ const FEATURES = [
     desc: 'ICAR-standard Urea, DAP, and MOP dose optimization with nutrient deficiency visual diagnosis.',
     stat: '100% ICAR',
     statLabel: 'Standards',
-    accent: '#d97706'
+    accent: '#d97706',
+    image: AGRI_IMAGES.organicSoil,
   },
   {
     id: 'disease',
@@ -59,7 +61,8 @@ const FEATURES = [
     desc: 'Instant leaf photo diagnosis identifying 38+ plant pathologies with verified organic & chemical remedies.',
     stat: '38+ Diseases',
     statLabel: 'Identified',
-    accent: 'var(--green-primary)'
+    accent: 'var(--green-primary)',
+    image: AGRI_IMAGES.healthyLeaf,
   },
   {
     id: 'weather',
@@ -69,7 +72,8 @@ const FEATURES = [
     desc: '24-hour hyperlocal weather advisory with heatwave, frost, storm, and flood early warnings.',
     stat: '24-Hour',
     statLabel: 'Live Radar',
-    accent: '#2563eb'
+    accent: '#2563eb',
+    image: AGRI_IMAGES.weatherLandscape,
   },
   {
     id: 'satellite',
@@ -79,7 +83,8 @@ const FEATURES = [
     desc: 'Sentinel-2 multispectral vegetation canopy greenness index and field moisture stress telemetry.',
     stat: '10m Res',
     statLabel: 'Canopy Index',
-    accent: '#059669'
+    accent: '#059669',
+    image: AGRI_IMAGES.agriTech,
   },
   {
     id: 'rotation',
@@ -89,7 +94,8 @@ const FEATURES = [
     desc: 'Science-backed 3-year crop rotation sequencing to replenish soil nitrogen and disrupt pest life-cycles.',
     stat: 'N+P+K',
     statLabel: 'Regenerative',
-    accent: '#8b5cf6'
+    accent: '#8b5cf6',
+    image: AGRI_IMAGES.rotationYear3,
   },
   {
     id: 'calendar',
@@ -99,7 +105,8 @@ const FEATURES = [
     desc: 'State-wise sowing, weeding, and harvesting windows synthesized from Agriculture Department bulletins.',
     stat: 'Pan-India',
     statLabel: 'Seasonal Map',
-    accent: '#0284c7'
+    accent: '#0284c7',
+    image: AGRI_IMAGES.heroGoldenField,
   },
   {
     id: 'profile',
@@ -109,7 +116,8 @@ const FEATURES = [
     desc: 'Digital farmer profile, laboratory soil test history, geo-tagged plot records, and seasonal harvest logs.',
     stat: 'Encrypted',
     statLabel: 'Farm Vault',
-    accent: 'var(--green-primary)'
+    accent: 'var(--green-primary)',
+    image: AGRI_IMAGES.soilFurrow,
   },
   {
     id: 'chatbot',
@@ -119,7 +127,8 @@ const FEATURES = [
     desc: 'Context-aware agricultural assistant answering farming queries in Hindi, Odia & English with voice output.',
     stat: 'Sarvam AI',
     statLabel: 'Voice Enabled',
-    accent: '#9333ea'
+    accent: '#9333ea',
+    image: AGRI_IMAGES.aiAssistantBg,
   },
 ];
 
@@ -135,7 +144,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentLang, setCurrentLang] = useState('en');
 
-  // Persistent Theme State (defaults to saved or OS preference)
+  // Persistent Theme State
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('krishivaani-theme');
@@ -157,7 +166,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-main)' }}>
-      {/* ── Top Navigation with Theme Toggle & Drawer ── */}
+      {/* ── Top Sticky Navigation ── */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -186,7 +195,7 @@ export default function App() {
                 padding: '4.5rem 0 4rem',
               }}
             >
-              {/* Subtle ambient light effects */}
+              {/* Subtle ambient lighting */}
               <div
                 style={{
                   position: 'absolute',
@@ -364,7 +373,7 @@ export default function App() {
                         alt="Indian progressive farmer examining healthy harvest crops"
                         style={{
                           width: '100%',
-                          height: '360px',
+                          height: '380px',
                           objectFit: 'cover',
                           display: 'block',
                           filter: theme === 'dark' ? 'brightness(0.92) contrast(1.05)' : 'none',
@@ -379,7 +388,7 @@ export default function App() {
                           left: 0,
                           right: 0,
                           padding: '1.25rem 1.5rem',
-                          background: 'linear-gradient(180deg, transparent 0%, rgba(7, 19, 15, 0.88) 100%)',
+                          background: 'linear-gradient(180deg, transparent 0%, rgba(7, 19, 15, 0.90) 100%)',
                           color: '#ffffff',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -388,16 +397,16 @@ export default function App() {
                       >
                         <div>
                           <div style={{ fontSize: '0.78rem', color: '#6ee7b7', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Agro-Climatic Zone
+                            Agro-Climatic Intelligence
                           </div>
-                          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.15rem' }}>
-                            Precision Crop Matrix
+                          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem' }}>
+                            Precision Crop Telemetry
                           </div>
                         </div>
                         <span
                           className="badge"
                           style={{
-                            background: 'rgba(34, 197, 94, 0.25)',
+                            background: 'rgba(34, 197, 94, 0.28)',
                             color: '#6ee7b7',
                             border: '1px solid rgba(110, 231, 183, 0.4)',
                             backdropFilter: 'blur(8px)',
@@ -447,11 +456,11 @@ export default function App() {
                             28°C
                           </span>
                           <span style={{ fontSize: '0.75rem', color: 'var(--green-primary)', fontWeight: 600 }}>
-                            Good Sowing
+                            Optimal
                           </span>
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          💧 64% Humidity · 12mm Rain
+                          💧 64% RH · 12mm Rain
                         </div>
                       </div>
                     </div>
@@ -575,7 +584,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* ── SECTION 2: CORE CAPABILITIES (Glass Cards Grid) ── */}
+            {/* ── SECTION 2: CORE CAPABILITIES (Havens-Style Photography Glass Cards) ── */}
             <section style={{ padding: '5rem 0 4rem', background: 'var(--bg-main)' }}>
               <div className="container">
                 <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -595,17 +604,17 @@ export default function App() {
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                    gap: '1.5rem',
+                    gap: '1.75rem',
                   }}
                 >
-                  {FEATURES.map(({ id, icon: Icon, tag, title, desc, stat, statLabel, accent }, i) => (
+                  {FEATURES.map(({ id, icon: Icon, tag, title, desc, stat, statLabel, accent, image }, i) => (
                     <div
                       key={id}
                       className="card-glass animate-fade-in-up"
                       onClick={() => setActiveTab(id)}
                       style={{
                         cursor: 'pointer',
-                        padding: '1.75rem',
+                        padding: '1.25rem',
                         borderRadius: 'var(--radius-lg)',
                         border: '1px solid var(--border-glass)',
                         display: 'flex',
@@ -617,7 +626,7 @@ export default function App() {
                         overflow: 'hidden',
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.transform = 'translateY(-5px)';
                         e.currentTarget.style.borderColor = 'var(--green-pale)';
                         e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                       }}
@@ -627,46 +636,78 @@ export default function App() {
                         e.currentTarget.style.boxShadow = 'var(--shadow-card)';
                       }}
                     >
-                      {/* Top Row: Icon + Stat Badge */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
-                          <div
+                      {/* Top Havens-Inspired Photographic Header with Glass Badge */}
+                      <div
+                        style={{
+                          height: '145px',
+                          borderRadius: 'calc(var(--radius-md) - 2px)',
+                          overflow: 'hidden',
+                          position: 'relative',
+                          marginBottom: '1.15rem',
+                        }}
+                      >
+                        <img
+                          src={image}
+                          alt={title}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(7, 19, 15, 0.78) 100%)',
+                          }}
+                        />
+                        {/* Overlaid Icon Badge */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '0.65rem',
+                            left: '0.65rem',
+                            width: 38,
+                            height: 38,
+                            borderRadius: '10px',
+                            background: 'rgba(255, 255, 255, 0.92)',
+                            backdropFilter: 'blur(8px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                          }}
+                        >
+                          <Icon size={20} color={accent || 'var(--green-primary)'} />
+                        </div>
+                        {/* Overlaid Tag */}
+                        <div style={{ position: 'absolute', top: '0.65rem', right: '0.65rem' }}>
+                          <span
+                            className="badge"
                             style={{
-                              width: 52,
-                              height: 52,
-                              borderRadius: '14px',
-                              background: 'var(--green-bg)',
-                              border: '1px solid var(--green-pale)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
+                              background: 'rgba(7, 19, 15, 0.70)',
+                              border: '1px solid rgba(255, 255, 255, 0.25)',
+                              color: '#f0f7f3',
+                              fontSize: '0.72rem',
+                              backdropFilter: 'blur(8px)',
+                              fontWeight: 600,
                             }}
                           >
-                            <Icon size={24} color={accent || 'var(--green-primary)'} />
-                          </div>
-
-                          <div style={{ textAlign: 'right' }}>
-                            <span
-                              className="badge"
-                              style={{
-                                background: 'var(--bg-surface-glass)',
-                                border: '1px solid var(--border-glass)',
-                                color: 'var(--text-secondary)',
-                                fontSize: '0.72rem',
-                                fontWeight: 600,
-                              }}
-                            >
-                              {tag}
-                            </span>
-                          </div>
+                            {tag}
+                          </span>
                         </div>
+                      </div>
 
+                      {/* Content */}
+                      <div>
                         <h3
                           style={{
                             fontFamily: 'var(--font-heading)',
                             fontSize: '1.2rem',
                             fontWeight: 700,
-                            marginBottom: '0.6rem',
+                            marginBottom: '0.5rem',
                             color: 'var(--text-primary)',
                           }}
                         >
@@ -675,10 +716,10 @@ export default function App() {
 
                         <p
                           style={{
-                            fontSize: '0.9rem',
+                            fontSize: '0.88rem',
                             color: 'var(--text-secondary)',
-                            lineHeight: 1.65,
-                            marginBottom: '1.5rem',
+                            lineHeight: 1.6,
+                            marginBottom: '1.25rem',
                           }}
                         >
                           {desc}
@@ -691,7 +732,7 @@ export default function App() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          paddingTop: '1rem',
+                          paddingTop: '0.85rem',
                           borderTop: '1px solid var(--border-glass)',
                         }}
                       >
@@ -724,11 +765,13 @@ export default function App() {
               </div>
             </section>
 
-            {/* ── SECTION 3: AI + AGRICULTURE PIPELINE (Havens Visual Flow) ── */}
+            {/* ── SECTION 3: AI + AGRICULTURE PIPELINE (Havens Visual Split) ── */}
             <section
               style={{
                 padding: '5rem 0',
-                background: 'var(--bg-section)',
+                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.greenPaddy, theme === 'dark' ? 0.94 : 0.88),
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 borderTop: '1px solid var(--border-glass)',
                 borderBottom: '1px solid var(--border-glass)',
                 position: 'relative',
@@ -755,7 +798,7 @@ export default function App() {
                       multi-parameter ML engine.
                     </p>
 
-                    {/* Step-by-Step Interactive Flow Cards */}
+                    {/* Step-by-Step Flow Cards */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                       {[
                         {
@@ -841,8 +884,8 @@ export default function App() {
                       }}
                     >
                       <img
-                        src={AGRI_IMAGES.agriTech}
-                        alt="High tech agriculture with precision sensors and crops"
+                        src={AGRI_IMAGES.farmerHarvestInspect}
+                        alt="Progressive Indian farmer inspecting healthy crop harvest in sunlight"
                         style={{
                           width: '100%',
                           height: '480px',
@@ -889,7 +932,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* ── SECTION 4: 3-YEAR SUSTAINABLE CROP PLANNING SHOWCASE ── */}
+            {/* ── SECTION 4: 3-YEAR SUSTAINABLE CROP PLANNING (Havens-Style Card Visuals) ── */}
             <section style={{ padding: '5rem 0', background: 'var(--bg-main)' }}>
               <div className="container">
                 <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -906,7 +949,7 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* 3-Year Visual Connected Sequence */}
+                {/* 3-Year Visual Connected Sequence with Havens Photography Headers */}
                 <div
                   style={{
                     display: 'grid',
@@ -923,6 +966,7 @@ export default function App() {
                       desc: 'Primary economic harvest. Demands high nitrogen and soil moisture. Generates substantial seasonal farmer income.',
                       benefit: 'Maximizes immediate revenue under optimal monsoon rainfall.',
                       color: 'var(--green-primary)',
+                      image: AGRI_IMAGES.rotationYear1,
                     },
                     {
                       year: 'Year 2',
@@ -931,6 +975,7 @@ export default function App() {
                       desc: 'Rhizobium bacteria in legume root nodules fix 40–60 kg atmospheric Nitrogen/hectare into the root zone without chemical fertilizer.',
                       benefit: 'Restores nitrogen reserves & halves subsequent fertilizer expense.',
                       color: 'var(--gold)',
+                      image: AGRI_IMAGES.rotationYear2,
                     },
                     {
                       year: 'Year 3',
@@ -939,13 +984,14 @@ export default function App() {
                       desc: 'Deep taproot systems draw sub-soil minerals to the surface, breaking cereal pest life-cycles and restoring mycorrhizal fungal webs.',
                       benefit: 'Breaks fungal blight cycles & improves soil organic carbon.',
                       color: '#8b5cf6',
+                      image: AGRI_IMAGES.rotationYear3,
                     },
-                  ].map(({ year, tag, crop, desc, benefit, color }) => (
+                  ].map(({ year, tag, crop, desc, benefit, color, image }) => (
                     <div
                       key={year}
                       className="card-glass"
                       style={{
-                        padding: '1.85rem',
+                        padding: '1.25rem',
                         borderRadius: 'var(--radius-lg)',
                         border: '1px solid var(--border-glass)',
                         display: 'flex',
@@ -955,42 +1001,74 @@ export default function App() {
                       }}
                     >
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                          <span
+                        {/* Card Photographic Header */}
+                        <div
+                          style={{
+                            height: '145px',
+                            borderRadius: 'calc(var(--radius-md) - 2px)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            marginBottom: '1rem',
+                          }}
+                        >
+                          <img
+                            src={image}
+                            alt={crop}
                             style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                          <div
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(7, 19, 15, 0.8) 100%)',
+                            }}
+                          />
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '0.65rem',
+                              left: '0.75rem',
                               fontFamily: 'var(--font-heading)',
                               fontWeight: 800,
-                              fontSize: '1.35rem',
-                              color: color,
+                              fontSize: '1.25rem',
+                              color: '#ffffff',
+                              textShadow: '0 2px 6px rgba(0,0,0,0.5)',
                             }}
                           >
                             {year}
-                          </span>
-                          <span
-                            className="badge"
-                            style={{
-                              background: 'var(--bg-surface-glass)',
-                              border: '1px solid var(--border-glass)',
-                              fontSize: '0.72rem',
-                              color: 'var(--text-secondary)',
-                            }}
-                          >
-                            {tag}
-                          </span>
+                          </div>
+                          <div style={{ position: 'absolute', top: '0.65rem', right: '0.75rem' }}>
+                            <span
+                              className="badge"
+                              style={{
+                                background: 'rgba(7, 19, 15, 0.70)',
+                                border: '1px solid rgba(255, 255, 255, 0.25)',
+                                fontSize: '0.7rem',
+                                color: '#f0f7f3',
+                                backdropFilter: 'blur(8px)',
+                              }}
+                            >
+                              {tag}
+                            </span>
+                          </div>
                         </div>
 
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.65rem', color: 'var(--text-primary)' }}>
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.55rem', color: 'var(--text-primary)' }}>
                           {crop}
                         </h3>
 
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '1.25rem' }}>
+                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.15rem' }}>
                           {desc}
                         </p>
                       </div>
 
                       <div
                         style={{
-                          padding: '0.85rem 1rem',
+                          padding: '0.75rem 0.95rem',
                           borderRadius: 'var(--radius-sm)',
                           background: 'var(--green-bg)',
                           border: '1px solid var(--green-pale)',
@@ -1029,7 +1107,9 @@ export default function App() {
             <section
               style={{
                 padding: '5rem 0',
-                background: 'var(--bg-section)',
+                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.foliageCanopy, theme === 'dark' ? 0.94 : 0.88),
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 borderTop: '1px solid var(--border-glass)',
                 borderBottom: '1px solid var(--border-glass)',
               }}
@@ -1154,7 +1234,7 @@ export default function App() {
             <section
               style={{
                 padding: '4.5rem 0',
-                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.weatherLandscape, theme === 'dark' ? 0.94 : 0.88),
+                backgroundImage: getHeroOverlay(theme, AGRI_IMAGES.weatherLandscape, theme === 'dark' ? 0.93 : 0.86),
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 position: 'relative',
@@ -1185,11 +1265,13 @@ export default function App() {
               </div>
             </section>
 
-            {/* ── SECTION 7: CTA BANNER (Deep Forest Glass) ── */}
+            {/* ── SECTION 7: CTA BANNER (Misty Dawn Valley Backdrop) ── */}
             <section
               style={{
-                background: 'linear-gradient(135deg, #07130F 0%, #0d281e 50%, #07130F 100%)',
-                padding: '4.5rem 0',
+                backgroundImage: getBannerOverlay(theme, AGRI_IMAGES.ctaBanner),
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                padding: '5rem 0',
                 position: 'relative',
                 overflow: 'hidden',
                 borderTop: '1px solid var(--border-glass)',
@@ -1202,7 +1284,7 @@ export default function App() {
                   right: '-100px',
                   width: '400px',
                   height: '400px',
-                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.25) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, transparent 70%)',
                   borderRadius: '50%',
                 }}
               />
@@ -1211,11 +1293,12 @@ export default function App() {
                 <span
                   className="badge"
                   style={{
-                    background: 'rgba(34, 197, 94, 0.2)',
+                    background: 'rgba(34, 197, 94, 0.22)',
                     color: '#6ee7b7',
-                    border: '1px solid rgba(110, 231, 183, 0.3)',
+                    border: '1px solid rgba(110, 231, 183, 0.35)',
                     marginBottom: '1.25rem',
-                    padding: '0.4rem 1rem',
+                    padding: '0.4rem 1.1rem',
+                    backdropFilter: 'blur(10px)',
                   }}
                 >
                   🌾 100% Free Public Good for Bharat's Farmers
@@ -1228,7 +1311,7 @@ export default function App() {
 
                 <p
                   style={{
-                    color: 'rgba(240, 247, 243, 0.75)',
+                    color: 'rgba(240, 247, 243, 0.85)',
                     marginBottom: '2.25rem',
                     maxWidth: '520px',
                     margin: '0 auto 2.25rem',
@@ -1256,10 +1339,10 @@ export default function App() {
                   <button
                     className="btn btn-lg"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.12)',
+                      background: 'rgba(255, 255, 255, 0.15)',
                       color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      backdropFilter: 'blur(16px)',
                     }}
                     onClick={() => setActiveTab('chatbot')}
                   >

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Mic, MicOff, Bot, User, Loader, Sprout, CloudSun, TrendingUp, Satellite, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const LANG_GREET = {
   en: "Hello! I'm KrishiVaani AI Assistant 🌾 I can help you with crop recommendations, weather advisories, yield estimates, and disease diagnosis. How can I help you today?",
@@ -296,7 +297,9 @@ export default function ChatbotWidget({ currentLang = 'en', onBack }) {
               display: 'flex',
               flexDirection: 'column',
               gap: '1.1rem',
-              background: 'var(--bg-main)',
+              backgroundImage: `linear-gradient(180deg, var(--bg-main) 0%, rgba(7, 19, 15, 0.82) 100%), url("${AGRI_IMAGES.aiAssistantBg}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
           >
             {messages.map(msg => (

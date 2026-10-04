@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CalendarDays, Search, Loader, Info, ArrowLeft, CheckCircle } from 'lucide-react';
+import { CalendarDays, Search, Loader, Info, ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const CROPS  = ['rice','wheat','maize','cotton','mustard','sugarcane','potato','soybean','chickpea','groundnut'];
 const STATES = [
@@ -107,9 +108,64 @@ export default function CropCalendar({ onBack }) {
           </span>
         </div>
         <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Crop Sowing & Harvesting Calendar</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
           State-wise optimal sowing windows, transplanting dates, and harvesting seasons for major Indian crops.
         </p>
+
+        {/* Havens-Inspired Crop Calendar Seasonal Banner */}
+        <div
+          className="card-glass"
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.85) 100%), url("${AGRI_IMAGES.heroGoldenField}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            padding: '1.75rem 2rem',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
+          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(34, 197, 94, 0.2)',
+                color: '#6ee7b7',
+                border: '1px solid rgba(110, 231, 183, 0.35)',
+                marginBottom: '0.75rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              <Sparkles size={13} /> Agro-Met Biological Schedule
+            </span>
+            <h3
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: '1.35rem',
+                color: '#f0fdf4',
+                marginBottom: '0.5rem',
+                fontWeight: 700,
+              }}
+            >
+              Phenological Sowing & Harvest Windows
+            </h3>
+            <p
+              style={{
+                color: '#d1fae5',
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+                margin: 0,
+                opacity: 0.9,
+              }}
+            >
+              Synchronized with Kharif, Rabi, and Zaid agro-climatic thermal units to avoid terminal heat stress and monsoon delays.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selector */}

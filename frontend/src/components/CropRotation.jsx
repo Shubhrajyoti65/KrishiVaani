@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RefreshCw, Search, Loader, Info, CheckCircle, AlertCircle, Calendar, Layers, ShieldCheck, Sprout, ArrowLeft } from 'lucide-react';
+import { AGRI_IMAGES } from '../data/agriImages';
 
 const CROPS  = ['rice','wheat','maize','cotton','mustard','soybean','chickpea','sugarcane','potato','groundnut'];
 const SOILS  = ['Alluvial','Black','Red','Laterite','Sandy Loam','Clayey Loam','Loamy'];
@@ -148,10 +149,46 @@ export default function CropRotation({ onBack }) {
             Soil Health & Multi-Year Strategy
           </span>
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Crop Rotation & Soil Improvement Planner</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
           Science-backed crop sequence planning to break pest cycles, replenish soil nutrients, and maximize long-term farm productivity.
         </p>
+
+        {/* Havens-Inspired Soil Health & Rotation Banner */}
+        <div
+          className="card-glass"
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.82) 100%), url("${AGRI_IMAGES.rotationYear3}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            padding: '1.75rem 2rem',
+            border: '1px solid var(--border-glass)',
+            boxShadow: 'var(--shadow-glass)',
+          }}
+        >
+          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(139, 92, 246, 0.22)',
+                color: '#c4b5fd',
+                border: '1px solid rgba(196, 181, 253, 0.35)',
+                marginBottom: '0.75rem',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🔄 3-Year Agronomic Soil Restoration Model
+            </span>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
+              Regenerative Crop Sequencing & Soil Microbiology
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
+              Break weed and fungal pathogen cycles, maximize organic nitrogen fixation, and sustain multi-year field productivity with state-specific crop rotations.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Mode Switcher Tabs */}
