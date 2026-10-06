@@ -10,20 +10,20 @@ import { AGRI_IMAGES } from '../data/agriImages';
 
 const CONDITION_ICON = {
   heatwave: '🌡️',
-  frost:    '❄️',
-  flood:    '🌊',
-  normal:   '🌤️',
-  rain:     '🌧️',
-  storm:    '⛈️',
+  frost: '❄️',
+  flood: '🌊',
+  normal: '🌤️',
+  rain: '🌧️',
+  storm: '⛈️',
 };
 
 const CONDITION_COLOR = {
   heatwave: { bg: '#fde8e3', border: '#f0b8a8', text: '#c04a30' },
-  frost:    { bg: '#e8f0fa', border: '#c8d8f0', text: '#2563eb' },
-  flood:    { bg: '#e8f0fa', border: '#93c5fd', text: '#1d4ed8' },
-  normal:   { bg: 'var(--green-bg)', border: 'var(--green-pale)', text: 'var(--green-primary)' },
-  rain:     { bg: '#e8f4fc', border: '#b8daf0', text: '#0284c7' },
-  storm:    { bg: '#fbf0e4', border: '#f5c898', text: '#d97706' },
+  frost: { bg: '#e8f0fa', border: '#c8d8f0', text: '#2563eb' },
+  flood: { bg: '#e8f0fa', border: '#93c5fd', text: '#1d4ed8' },
+  normal: { bg: 'var(--green-bg)', border: 'var(--green-pale)', text: 'var(--green-primary)' },
+  rain: { bg: '#e8f4fc', border: '#b8daf0', text: '#0284c7' },
+  storm: { bg: '#fbf0e4', border: '#f5c898', text: '#d97706' },
 };
 
 export default function WeatherWidget({ compact = false, onBack }) {
@@ -291,95 +291,11 @@ export default function WeatherWidget({ compact = false, onBack }) {
   // Full Page View
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            Real-Time OpenWeather Agromet
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <CloudSun size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Weather & Extreme Climate Advisory</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Search any district across India or type any city name to get live meteorological observations, 5-day precision agromet forecasts, and ICAR farming advisories.
-        </p>
-
-        {/* Havens-Inspired Atmospheric Agromet Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.82) 100%), url("${AGRI_IMAGES.weatherLandscape}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(37, 99, 235, 0.22)',
-                color: '#93c5fd',
-                border: '1px solid rgba(147, 197, 253, 0.35)',
-                marginBottom: '0.75rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🛰️ Hyperlocal India Meteorological Department & Satellite Radar
-            </span>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
-              Agricultural Meteorology & Severe Storm Alerts
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
-              Real-time atmospheric observations including heatwave warnings, frost index, rainfall accumulation, wind velocity, and ICAR agromet bulletins for field protection.
-            </p>
-          </div>
-        </div>
+        <h2 className="segment-header-title">Weather & Extreme Climate Advisory</h2>
       </div>
 
       {/* Search Header Bar */}

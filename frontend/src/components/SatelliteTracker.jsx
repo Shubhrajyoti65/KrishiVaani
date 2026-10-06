@@ -4,11 +4,11 @@ import SearchableSelect from './SearchableSelect';
 import { MAJOR_DISTRICTS_AND_CITIES } from '../data/agriData';
 
 const NDVI_LEVELS = [
-  { min: 0.8, max: 1.0, label: 'Dense Canopy',       color: '#1a7a1a', bg: '#e0f0d8' },
-  { min: 0.6, max: 0.8, label: 'Healthy Crop',       color: 'var(--green-primary)', bg: 'var(--green-bg)' },
-  { min: 0.4, max: 0.6, label: 'Moderate Growth',    color: '#8a9a20', bg: '#f0f4d0' },
-  { min: 0.2, max: 0.4, label: 'Sparse / Stressed',  color: 'var(--gold)', bg: 'var(--gold-pale)' },
-  { min: 0.0, max: 0.2, label: 'Bare Soil / Poor',   color: '#c06010', bg: '#fff0e0' },
+  { min: 0.8, max: 1.0, label: 'Dense Canopy', color: '#1a7a1a', bg: '#e0f0d8' },
+  { min: 0.6, max: 0.8, label: 'Healthy Crop', color: 'var(--green-primary)', bg: 'var(--green-bg)' },
+  { min: 0.4, max: 0.6, label: 'Moderate Growth', color: '#8a9a20', bg: '#f0f4d0' },
+  { min: 0.2, max: 0.4, label: 'Sparse / Stressed', color: 'var(--gold)', bg: 'var(--gold-pale)' },
+  { min: 0.0, max: 0.2, label: 'Bare Soil / Poor', color: '#c06010', bg: '#fff0e0' },
 ];
 
 function getNdviLevel(ndvi) {
@@ -179,58 +179,11 @@ export default function SatelliteTracker({ onBack }) {
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            Sentinel-2 Multispectral
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <Satellite size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Satellite NDVI Crop Health & Water Stress</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Search any agricultural district across India or enter exact farm GPS coordinates to monitor live vegetation indices (NDVI/NDWI) via European Space Agency (ESA) Sentinel-2 satellite imagery.
-        </p>
+        <h2 className="segment-header-title">Satellite NDVI Crop Health & Water Stress</h2>
       </div>
 
       {/* Dynamic Search & Location Selector Card */}
