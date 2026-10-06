@@ -61,30 +61,44 @@ def _get_llm():
     openai_key = settings.OPENAI_API_KEY
     anthropic_key = settings.ANTHROPIC_API_KEY
 
+    primary_llm = None
+    fallback_llms = []
+
     if openai_key:
         try:
             from langchain_openai import ChatOpenAI
-            _llm = ChatOpenAI(
+            primary_llm = ChatOpenAI(
                 model="gpt-4o-mini",
                 temperature=0.3,
                 openai_api_key=openai_key,
                 streaming=False,
+                max_retries=1,
             )
-            return _llm
         except Exception:
             pass
 
     if anthropic_key:
         try:
             from langchain_anthropic import ChatAnthropic
-            _llm = ChatAnthropic(
+            anth_llm = ChatAnthropic(
                 model="claude-3-haiku-20240307",
                 temperature=0.3,
                 anthropic_api_key=anthropic_key,
+                max_retries=1,
             )
-            return _llm
+            if primary_llm is None:
+                primary_llm = anth_llm
+            else:
+                fallback_llms.append(anth_llm)
         except Exception:
             pass
+
+    if primary_llm is not None:
+        if fallback_llms:
+            _llm = primary_llm.with_fallbacks(fallback_llms)
+        else:
+            _llm = primary_llm
+        return _llm
 
     return None  # No LLM configured → fallback mode
 
