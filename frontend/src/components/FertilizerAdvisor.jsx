@@ -85,99 +85,15 @@ export default function FertilizerAdvisor({ onBack }) {
   };
 
   const SQ_COLOR = { high: 'var(--green-primary)', medium: '#9a6e0a', low: '#c04a30' };
-  const SQ_BG   = { high: 'var(--green-bg)',       medium: 'var(--gold-pale)',    low: '#fde8e3' };
+  const SQ_BG = { high: 'var(--green-bg)', medium: 'var(--gold-pale)', low: '#fde8e3' };
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            ICAR Scientific Nutrition
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <FlaskConical size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Precision Fertilizer Dose Advisor</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Search any of 30+ Indian crops, states, and soil types to calculate exact Urea, DAP, and MOP bag requirements per acre based on Indian Council of Agricultural Research (ICAR) nutrient guidelines.
-        </p>
-
-        {/* Havens-Inspired Fertile Soil & ICAR Nutrition Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.82) 100%), url("${AGRI_IMAGES.organicSoil}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(217, 119, 6, 0.22)',
-                color: '#f59e0b',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                marginBottom: '0.75rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🧪 Indian Council of Agricultural Research (ICAR) Standards
-            </span>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
-              Soil Health & Precision Dose Optimization
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
-              Balance Nitrogen (N), Phosphorus (P), and Potassium (K) with soil pH correction. Generates tailored Urea, DAP, and MOP bag plans while protecting microbial biodiversity.
-            </p>
-          </div>
-        </div>
+        <h2 className="segment-header-title">Precision Fertilizer Dose Advisor</h2>
       </div>
 
       {/* ── Query Form at Top (Full Width) ── */}

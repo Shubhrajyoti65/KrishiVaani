@@ -15,14 +15,14 @@ const DEFAULT_FORM = {
 };
 
 export default function CropRecommendationCard({ onBack }) {
-  const [form,    setForm]    = useState(DEFAULT_FORM);
-  const [result,  setResult]  = useState(null);
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchingWeather, setFetchingWeather] = useState(false);
   const [weatherMsg, setWeatherMsg] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
-  const [error,   setError]   = useState(null);
+  const [error, setError] = useState(null);
   const resultsRef = useRef(null);
 
   useEffect(() => {
@@ -113,113 +113,11 @@ export default function CropRecommendationCard({ onBack }) {
   return (
     <div>
       {/* Page header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            AI Crop Intelligence
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <Sprout size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Location-, Soil- & Weather-Aware Crop Recommendation</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Trained on benchmark agricultural datasets with an <strong>XGBoost Multi-Class Classifier</strong>. Enter your soil health parameters or auto-sync localized regional weather.
-        </p>
-
-        {/* Havens-Inspired Agro-Ecological Recommendation Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.85) 100%), url("${AGRI_IMAGES.greenPaddy}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(34, 197, 94, 0.2)',
-                color: '#6ee7b7',
-                border: '1px solid rgba(110, 231, 183, 0.35)',
-                marginBottom: '0.75rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              <Sparkles size={13} /> ICAR & NPK Machine Learning Pipeline
-            </span>
-            <h3
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '1.35rem',
-                color: '#f0fdf4',
-                marginBottom: '0.5rem',
-                fontWeight: 700,
-              }}
-            >
-              Multi-Factor Precision Cropping
-            </h3>
-            <p
-              style={{
-                color: '#d1fae5',
-                fontSize: '0.9rem',
-                lineHeight: 1.6,
-                margin: 0,
-                opacity: 0.9,
-              }}
-            >
-              Calibrated for Indian agro-climatic zones. Combine soil nutrients (N, P, K, pH) with localized rainfall & temperature metrics to forecast optimal high-yield cultivars.
-            </p>
-          </div>
-        </div>
+        <h2 className="segment-header-title">Location, Soil & Weather Aware Crop Recommendation</h2>
       </div>
 
       {/* ── Input form (Full-width Query at Top) ── */}
@@ -274,9 +172,9 @@ export default function CropRecommendationCard({ onBack }) {
           {/* Soil Nutrients NPK */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
             {[
-              { name: 'nitrogen',   label: 'Nitrogen (N)', min: 0, max: 200, unit: 'kg/ha' },
+              { name: 'nitrogen', label: 'Nitrogen (N)', min: 0, max: 200, unit: 'kg/ha' },
               { name: 'phosphorus', label: 'Phosphorus (P)', min: 0, max: 200, unit: 'kg/ha' },
-              { name: 'potassium',  label: 'Potassium (K)', min: 0, max: 200, unit: 'kg/ha' },
+              { name: 'potassium', label: 'Potassium (K)', min: 0, max: 200, unit: 'kg/ha' },
             ].map(({ name, label, min, max, unit }) => (
               <div className="form-group" key={name} style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 600 }}>{label}</label>
@@ -299,9 +197,9 @@ export default function CropRecommendationCard({ onBack }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             {[
               { name: 'temperature', label: 'Temperature', unit: '°C', min: 0, max: 60 },
-              { name: 'humidity',    label: 'Humidity',    unit: '%',  min: 0, max: 100 },
-              { name: 'rainfall',    label: 'Annual Rainfall', unit: 'mm', min: 0, max: 500 },
-              { name: 'ph',          label: 'Soil pH',     unit: 'pH', min: 3, max: 10, step: 0.1 },
+              { name: 'humidity', label: 'Humidity', unit: '%', min: 0, max: 100 },
+              { name: 'rainfall', label: 'Annual Rainfall', unit: 'mm', min: 0, max: 500 },
+              { name: 'ph', label: 'Soil pH', unit: 'pH', min: 3, max: 10, step: 0.1 },
             ].map(({ name, label, unit, min, max, step = 1 }) => (
               <div className="form-group" key={name} style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 600 }}>{label}</label>
@@ -320,7 +218,7 @@ export default function CropRecommendationCard({ onBack }) {
             disabled={loading}
           >
             {loading ? <><Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> Evaluating with XGBoost Classifier...</>
-                     : <><Sprout size={18} /> Evaluate Optimal Crops & Strategy</>}
+              : <><Sprout size={18} /> Evaluate Optimal Crops & Strategy</>}
           </button>
         </form>
       </div>

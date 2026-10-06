@@ -4,16 +4,16 @@ import { logCropToFarmHistory } from '../utils/farmHistoryService';
 import { AGRI_IMAGES } from '../data/agriImages';
 
 const CROPS_MSP = {
-  Rice:      { msp: 2183, season: 'Kharif', yield_range: '2.5–4.5' },
-  Wheat:     { msp: 2275, season: 'Rabi',   yield_range: '3.5–5.5' },
-  Maize:     { msp: 1962, season: 'Kharif', yield_range: '2.0–4.0' },
-  Cotton:    { msp: 6620, season: 'Kharif', yield_range: '1.5–2.5' },
-  Soybean:   { msp: 4600, season: 'Kharif', yield_range: '1.2–2.0' },
+  Rice: { msp: 2183, season: 'Kharif', yield_range: '2.5–4.5' },
+  Wheat: { msp: 2275, season: 'Rabi', yield_range: '3.5–5.5' },
+  Maize: { msp: 1962, season: 'Kharif', yield_range: '2.0–4.0' },
+  Cotton: { msp: 6620, season: 'Kharif', yield_range: '1.5–2.5' },
+  Soybean: { msp: 4600, season: 'Kharif', yield_range: '1.2–2.0' },
   Groundnut: { msp: 6377, season: 'Kharif', yield_range: '1.5–2.8' },
-  Chickpea:  { msp: 5440, season: 'Rabi',   yield_range: '1.2–2.0' },
-  Mustard:   { msp: 5650, season: 'Rabi',   yield_range: '1.2–2.5' },
-  Sugarcane: { msp: 340,  season: 'Annual', yield_range: '60–80' },
-  Potato:    { msp: 1200, season: 'Rabi',   yield_range: '15–25' },
+  Chickpea: { msp: 5440, season: 'Rabi', yield_range: '1.2–2.0' },
+  Mustard: { msp: 5650, season: 'Rabi', yield_range: '1.2–2.5' },
+  Sugarcane: { msp: 340, season: 'Annual', yield_range: '60–80' },
+  Potato: { msp: 1200, season: 'Rabi', yield_range: '15–25' },
 };
 
 const DEFAULT_FORM = { crop: 'Wheat', area: 2, soil_quality: 'medium', irrigation: 'Canal', state: 'Punjab' };
@@ -24,10 +24,10 @@ export default function YieldCalculator({ onBack }) {
   const [tab, setTab] = useState('cost-returns'); // 'cost-returns' | 'yield-msp'
 
   // Yield & MSP state
-  const [form,    setForm]    = useState(DEFAULT_FORM);
-  const [result,  setResult]  = useState(null);
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
+  const [error, setError] = useState(null);
 
   // Production Cost & Gross Return state
   const [costForm, setCostForm] = useState({
@@ -46,10 +46,10 @@ export default function YieldCalculator({ onBack }) {
     transportation_cost_inr: '',
     other_cost_inr: '',
   });
-  const [costResult,  setCostResult]  = useState(null);
+  const [costResult, setCostResult] = useState(null);
   const [costLoading, setCostLoading] = useState(false);
-  const [costError,   setCostError]   = useState(null);
-  const [mandiData,   setMandiData]   = useState(null);
+  const [costError, setCostError] = useState(null);
+  const [mandiData, setMandiData] = useState(null);
 
   const costResultsRef = useRef(null);
   const yieldResultsRef = useRef(null);
@@ -218,135 +218,11 @@ export default function YieldCalculator({ onBack }) {
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            Farm Economics & Revenue
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <LineChart size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Cultivation Cost & Revenue Calculator</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Calculate deterministic operational costs, forecast MSP harvest revenues, and compute gross net returns per acre.
-        </p>
-
-        {/* Havens-Inspired Harvest & Soil Economics Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.84) 100%), url("${AGRI_IMAGES.harvestGrain}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(234, 179, 8, 0.22)',
-                color: '#fde047',
-                border: '1px solid rgba(253, 224, 71, 0.35)',
-                marginBottom: '0.75rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🌾 Commission for Agricultural Costs & Prices (CACP)
-            </span>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
-              Production Economics & MSP Profit Maximizer
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
-              Model comprehensive C2 cultivation costs across seeds, fertilizers, machinery, and labour alongside live Indian government Minimum Support Price (MSP) harvest projections.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Switcher */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', background: 'var(--bg-section)', padding: '0.35rem', borderRadius: '10px', width: 'fit-content' }}>
-        <button
-          onClick={() => setTab('cost-returns')}
-          style={{
-            padding: '0.5rem 1.25rem',
-            borderRadius: '8px',
-            border: tab === 'cost-returns' ? '1px solid var(--border-glass)' : '1px solid transparent',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            background: tab === 'cost-returns' ? 'var(--bg-card)' : 'transparent',
-            color: tab === 'cost-returns' ? 'var(--green-primary)' : 'var(--text-muted)',
-            boxShadow: tab === 'cost-returns' ? 'var(--shadow-sm)' : 'none',
-            display: 'flex', alignItems: 'center', gap: '0.4rem',
-            transition: 'all 0.2s',
-          }}
-        >
-          <Calculator size={16} /> Cost of Cultivation & Gross Return
-        </button>
-        <button
-          onClick={() => setTab('yield-msp')}
-          style={{
-            padding: '0.5rem 1.25rem',
-            borderRadius: '8px',
-            border: tab === 'yield-msp' ? '1px solid var(--border-glass)' : '1px solid transparent',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '0.875rem',
-            background: tab === 'yield-msp' ? 'var(--bg-card)' : 'transparent',
-            color: tab === 'yield-msp' ? 'var(--green-primary)' : 'var(--text-muted)',
-            boxShadow: tab === 'yield-msp' ? 'var(--shadow-sm)' : 'none',
-            display: 'flex', alignItems: 'center', gap: '0.4rem',
-            transition: 'all 0.2s',
-          }}
-        >
-          <LineChart size={16} /> Harvest Yield Forecast & MSP
-        </button>
+        <h2 className="segment-header-title">Cultivation Cost & Revenue Calculator</h2>
       </div>
 
       {/* ══════════════════════════════════════
@@ -356,6 +232,50 @@ export default function YieldCalculator({ onBack }) {
         <div>
           {/* Query Form (Full Width on Top) */}
           <div className="card" style={{ marginBottom: '2rem' }}>
+            {/* Integrated Tabs Switcher inside the box */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', paddingBottom: '1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-section)', padding: '0.35rem', borderRadius: '10px', width: 'fit-content' }}>
+                <button
+                  type="button"
+                  onClick={() => setTab('cost-returns')}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    border: tab === 'cost-returns' ? '1px solid var(--border-glass)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: tab === 'cost-returns' ? 'var(--bg-card)' : 'transparent',
+                    color: tab === 'cost-returns' ? 'var(--green-primary)' : 'var(--text-muted)',
+                    boxShadow: tab === 'cost-returns' ? 'var(--shadow-sm)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Calculator size={16} /> Cost of Cultivation & Gross Return
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('yield-msp')}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    border: tab === 'yield-msp' ? '1px solid var(--border-glass)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: tab === 'yield-msp' ? 'var(--bg-card)' : 'transparent',
+                    color: tab === 'yield-msp' ? 'var(--green-primary)' : 'var(--text-muted)',
+                    boxShadow: tab === 'yield-msp' ? 'var(--shadow-sm)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <LineChart size={16} /> Harvest Yield Forecast & MSP
+                </button>
+              </div>
+            </div>
+
             <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.25rem' }}>
               Operational Input Cost Parameters
             </h3>
@@ -651,6 +571,50 @@ export default function YieldCalculator({ onBack }) {
         <div>
           {/* Form (Full Width on Top) */}
           <div className="card" style={{ marginBottom: '2rem' }}>
+            {/* Integrated Tabs Switcher inside the box */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', paddingBottom: '1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-section)', padding: '0.35rem', borderRadius: '10px', width: 'fit-content' }}>
+                <button
+                  type="button"
+                  onClick={() => setTab('cost-returns')}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    border: tab === 'cost-returns' ? '1px solid var(--border-glass)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: tab === 'cost-returns' ? 'var(--bg-card)' : 'transparent',
+                    color: tab === 'cost-returns' ? 'var(--green-primary)' : 'var(--text-muted)',
+                    boxShadow: tab === 'cost-returns' ? 'var(--shadow-sm)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Calculator size={16} /> Cost of Cultivation & Gross Return
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('yield-msp')}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '8px',
+                    border: tab === 'yield-msp' ? '1px solid var(--border-glass)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: tab === 'yield-msp' ? 'var(--bg-card)' : 'transparent',
+                    color: tab === 'yield-msp' ? 'var(--green-primary)' : 'var(--text-muted)',
+                    boxShadow: tab === 'yield-msp' ? 'var(--shadow-sm)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <LineChart size={16} /> Harvest Yield Forecast & MSP
+                </button>
+              </div>
+            </div>
+
             <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem', marginBottom: '1.25rem' }}>Farm & Crop Parameters</h3>
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>

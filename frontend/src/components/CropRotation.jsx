@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { RefreshCw, Search, Loader, Info, CheckCircle, AlertCircle, Calendar, Layers, ShieldCheck, Sprout, ArrowLeft } from 'lucide-react';
 import { AGRI_IMAGES } from '../data/agriImages';
 
-const CROPS  = ['rice','wheat','maize','cotton','mustard','soybean','chickpea','sugarcane','potato','groundnut'];
-const SOILS  = ['Alluvial','Black','Red','Laterite','Sandy Loam','Clayey Loam','Loamy'];
-const STATES = ['Punjab','Haryana','Uttar Pradesh','Bihar','Odisha','West Bengal','Andhra Pradesh','Tamil Nadu','Karnataka','Maharashtra','Gujarat','Rajasthan','Madhya Pradesh'];
+const CROPS = ['rice', 'wheat', 'maize', 'cotton', 'mustard', 'soybean', 'chickpea', 'sugarcane', 'potato', 'groundnut'];
+const SOILS = ['Alluvial', 'Black', 'Red', 'Laterite', 'Sandy Loam', 'Clayey Loam', 'Loamy'];
+const STATES = ['Punjab', 'Haryana', 'Uttar Pradesh', 'Bihar', 'Odisha', 'West Bengal', 'Andhra Pradesh', 'Tamil Nadu', 'Karnataka', 'Maharashtra', 'Gujarat', 'Rajasthan', 'Madhya Pradesh'];
 
 const PRIORITY_COLOR = { 1: 'var(--green-primary)', 2: '#2563eb', 3: 'var(--gold)', 4: 'var(--text-muted)' };
-const PRIORITY_BG    = { 1: 'var(--green-bg)', 2: 'rgba(37, 99, 235, 0.16)', 3: 'var(--gold-pale)', 4: 'var(--bg-section)' };
+const PRIORITY_BG = { 1: 'var(--green-bg)', 2: 'rgba(37, 99, 235, 0.16)', 3: 'var(--gold-pale)', 4: 'var(--bg-section)' };
 
 export default function CropRotation({ onBack }) {
   const [activeMode, setActiveMode] = useState('multi-year'); // 'single-year' | 'multi-year'
@@ -15,23 +15,23 @@ export default function CropRotation({ onBack }) {
   // Single-year quick rotation state
   const [prevCrop, setPrevCrop] = useState('rice');
   const [soilType, setSoilType] = useState('Alluvial');
-  const [state, setState]       = useState('Punjab');
-  const [result, setResult]     = useState(null);
-  const [loading, setLoading]   = useState(false);
+  const [state, setState] = useState('Punjab');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // 3-Year Planning state
-  const [district, setDistrict]                 = useState('Ludhiana');
-  const [currentSeason, setCurrentSeason]       = useState('Kharif');
-  const [waterAvail, setWaterAvail]             = useState('Canal');
-  const [soilGoal, setSoilGoal]                 = useState('balanced_health');
-  const [hasSoilTest, setHasSoilTest]           = useState(false);
-  const [nitrogen, setNitrogen]                 = useState(75);
-  const [phosphorus, setPhosphorus]             = useState(38);
-  const [potassium, setPotassium]               = useState(40);
-  const [ph, setPh]                             = useState(7.2);
-  const [multiYearPlan, setMultiYearPlan]       = useState(null);
+  const [district, setDistrict] = useState('Ludhiana');
+  const [currentSeason, setCurrentSeason] = useState('Kharif');
+  const [waterAvail, setWaterAvail] = useState('Canal');
+  const [soilGoal, setSoilGoal] = useState('balanced_health');
+  const [hasSoilTest, setHasSoilTest] = useState(false);
+  const [nitrogen, setNitrogen] = useState(75);
+  const [phosphorus, setPhosphorus] = useState(38);
+  const [potassium, setPotassium] = useState(40);
+  const [ph, setPh] = useState(7.2);
+  const [multiYearPlan, setMultiYearPlan] = useState(null);
   const [multiYearLoading, setMultiYearLoading] = useState(false);
-  const [multiYearError, setMultiYearError]     = useState(null);
+  const [multiYearError, setMultiYearError] = useState(null);
 
   const multiYearRef = useRef(null);
   const singleYearRef = useRef(null);
@@ -101,98 +101,15 @@ export default function CropRotation({ onBack }) {
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            Soil Health & Multi-Year Strategy
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <RefreshCw size={24} />
         </div>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Science-backed crop sequence planning to break pest cycles, replenish soil nutrients, and maximize long-term farm productivity.
-        </p>
-
-        {/* Havens-Inspired Soil Health & Rotation Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.82) 100%), url("${AGRI_IMAGES.rotationYear3}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(139, 92, 246, 0.22)',
-                color: '#c4b5fd',
-                border: '1px solid rgba(196, 181, 253, 0.35)',
-                marginBottom: '0.75rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🔄 3-Year Agronomic Soil Restoration Model
-            </span>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
-              Regenerative Crop Sequencing & Soil Microbiology
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
-              Break weed and fungal pathogen cycles, maximize organic nitrogen fixation, and sustain multi-year field productivity with state-specific crop rotations.
-            </p>
-          </div>
-        </div>
+        <h2 className="segment-header-title">Crop Rotation & Soil Improvement Planner</h2>
       </div>
 
       {/* Mode Switcher Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.75rem', background: 'var(--bg-section)', padding: '0.35rem', borderRadius: '10px', width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.75rem', background: 'var(--bg-section)', padding: '0.35rem', borderRadius: '10px', width: 'fit-content', margin: '0 auto 1.75rem auto' }}>
         <button
           onClick={() => setActiveMode('multi-year')}
           style={{

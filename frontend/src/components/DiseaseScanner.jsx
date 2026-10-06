@@ -4,42 +4,42 @@ import { logCropToFarmHistory } from '../utils/farmHistoryService';
 import { AGRI_IMAGES } from '../data/agriImages';
 
 const SEV_COLOR = {
-  None:     { bg: 'var(--green-bg)',           border: 'var(--green-pale)',       text: 'var(--green-primary)' },
-  Low:      { bg: 'var(--gold-pale)',          border: 'rgba(234, 179, 8, 0.35)', text: 'var(--gold)' },
-  Moderate: { bg: 'rgba(217, 119, 6, 0.16)',   border: 'rgba(217, 119, 6, 0.38)', text: '#d97706' },
-  High:     { bg: 'rgba(239, 68, 68, 0.16)',   border: 'rgba(239, 68, 68, 0.38)', text: '#ef4444' },
+  None: { bg: 'var(--green-bg)', border: 'var(--green-pale)', text: 'var(--green-primary)' },
+  Low: { bg: 'var(--gold-pale)', border: 'rgba(234, 179, 8, 0.35)', text: 'var(--gold)' },
+  Moderate: { bg: 'rgba(217, 119, 6, 0.16)', border: 'rgba(217, 119, 6, 0.38)', text: '#d97706' },
+  High: { bg: 'rgba(239, 68, 68, 0.16)', border: 'rgba(239, 68, 68, 0.38)', text: '#ef4444' },
 };
 
 const COMMON_CROPS = [
-  { id: 'tomato',    name: 'Tomato (टमाटर)',          icon: '🍅' },
-  { id: 'potato',    name: 'Potato (आलू)',            icon: '🥔' },
-  { id: 'rice',      name: 'Rice / Paddy (धान)',      icon: '🌾' },
-  { id: 'wheat',     name: 'Wheat (गेहूं)',           icon: '🌾' },
-  { id: 'cotton',    name: 'Cotton (कपास)',           icon: '🌱' },
-  { id: 'maize',     name: 'Maize / Corn (मक्का)',    icon: '🌽' },
-  { id: 'chilli',    name: 'Chilli / Pepper (मिर्च)', icon: '🌶️' },
-  { id: 'soybean',   name: 'Soybean (सोयाबीन)',       icon: '🫘' },
-  { id: 'apple',     name: 'Apple (सेब)',             icon: '🍎' },
-  { id: 'banana',    name: 'Banana (केला)',           icon: '🍌' },
-  { id: 'mango',     name: 'Mango (आम)',              icon: '🥭' },
-  { id: 'cucumber',  name: 'Cucumber (खीरा)',         icon: '🥒' },
-  { id: 'sugarcane', name: 'Sugarcane (गन्ना)',       icon: '🎋' },
-  { id: 'cabbage',   name: 'Cabbage (पत्तागोभी)',     icon: '🥬' },
-  { id: 'groundnut', name: 'Groundnut (मूंगफली)',     icon: '🥜' },
-  { id: 'onion',     name: 'Onion (प्याज)',           icon: '🧅' },
-  { id: 'general',   name: 'Other / General Crop',    icon: '🌿' },
+  { id: 'tomato', name: 'Tomato (टमाटर)', icon: '🍅' },
+  { id: 'potato', name: 'Potato (आलू)', icon: '🥔' },
+  { id: 'rice', name: 'Rice / Paddy (धान)', icon: '🌾' },
+  { id: 'wheat', name: 'Wheat (गेहूं)', icon: '🌾' },
+  { id: 'cotton', name: 'Cotton (कपास)', icon: '🌱' },
+  { id: 'maize', name: 'Maize / Corn (मक्का)', icon: '🌽' },
+  { id: 'chilli', name: 'Chilli / Pepper (मिर्च)', icon: '🌶️' },
+  { id: 'soybean', name: 'Soybean (सोयाबीन)', icon: '🫘' },
+  { id: 'apple', name: 'Apple (सेब)', icon: '🍎' },
+  { id: 'banana', name: 'Banana (केला)', icon: '🍌' },
+  { id: 'mango', name: 'Mango (आम)', icon: '🥭' },
+  { id: 'cucumber', name: 'Cucumber (खीरा)', icon: '🥒' },
+  { id: 'sugarcane', name: 'Sugarcane (गन्ना)', icon: '🎋' },
+  { id: 'cabbage', name: 'Cabbage (पत्तागोभी)', icon: '🥬' },
+  { id: 'groundnut', name: 'Groundnut (मूंगफली)', icon: '🥜' },
+  { id: 'onion', name: 'Onion (प्याज)', icon: '🧅' },
+  { id: 'general', name: 'Other / General Crop', icon: '🌿' },
 ];
 
 export default function DiseaseScanner({ onBack }) {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [preview,      setPreview]      = useState(null);
-  const [result,       setResult]       = useState(null);
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState(null);
-  const [dragOver,     setDragOver]     = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState('');
-  const [saveLoading,  setSaveLoading]  = useState(false);
-  const [saveMsg,      setSaveMsg]      = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null);
   const fileRef = useRef(null);
   const resultsRef = useRef(null);
 
@@ -86,7 +86,7 @@ export default function DiseaseScanner({ onBack }) {
         try {
           const errData = await res.json();
           if (errData.detail) errMessage = errData.detail;
-        } catch (_) {}
+        } catch (_) { }
         throw new Error(errMessage);
       }
 
@@ -118,7 +118,7 @@ export default function DiseaseScanner({ onBack }) {
       await logCropToFarmHistory({
         crop: result.crop || 'Crop',
         disease_experienced: `${result.disease_name || result.condition_type} (Severity: ${result.severity})`,
-        soil_condition_note: `DigiGreen Vision AI Diagnosis: ${result.disease_name} (${((result.confidence || 0.95)*100).toFixed(1)}% conf). Severity: ${result.severity}. PHI: ${(result.llm_grounded_guidance?.cibrc_chemical_management || [])[0]?.phi_harvest_interval || 'Standard safety interval'}.`,
+        soil_condition_note: `DigiGreen Vision AI Diagnosis: ${result.disease_name} (${((result.confidence || 0.95) * 100).toFixed(1)}% conf). Severity: ${result.severity}. PHI: ${(result.llm_grounded_guidance?.cibrc_chemical_management || [])[0]?.phi_harvest_interval || 'Standard safety interval'}.`,
         season: 'Current',
         year: new Date().getFullYear(),
         area_acres: 1.0,
@@ -146,95 +146,11 @@ export default function DiseaseScanner({ onBack }) {
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Back to Dashboard"
-              title="Back to Dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                border: '1.5px solid var(--border-color)',
-                background: '#ffffff',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(28,43,26,0.08)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--green-bg)';
-                e.currentTarget.style.color = 'var(--green-primary)';
-                e.currentTarget.style.borderColor = 'var(--green-pale)';
-                e.currentTarget.style.transform = 'translateX(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <span style={{
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--green-primary)',
-          }}>
-            Computer Vision
-          </span>
+      <div className="segment-header-box">
+        <div className="segment-header-icon">
+          <Leaf size={24} />
         </div>
-        <h2 className="heading-lg" style={{ marginBottom: '0.5rem' }}>Leaf Disease Scanner</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-          Select your plant type and upload a photo of your leaf. DigiGreen AI will diagnose diseases and provide organic & chemical remedies.
-        </p>
-
-        {/* Havens-Inspired Macro Botanical Diagnostic Banner */}
-        <div
-          className="card-glass"
-          style={{
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            position: 'relative',
-            backgroundImage: `linear-gradient(135deg, rgba(7, 19, 15, 0.88) 0%, rgba(13, 33, 26, 0.85) 100%), url("${AGRI_IMAGES.healthyLeaf}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: '1.75rem 2rem',
-            border: '1px solid var(--border-glass)',
-            boxShadow: 'var(--shadow-glass)',
-          }}
-        >
-          <div style={{ maxWidth: '640px', position: 'relative', zIndex: 2 }}>
-            <span
-              className="badge"
-              style={{
-                background: 'rgba(34, 197, 94, 0.22)',
-                color: '#6ee7b7',
-                border: '1px solid rgba(110, 231, 183, 0.35)',
-                marginBottom: '0.75rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🔬 Computer Vision Multi-Task Vision AI (DaViT-Base)
-            </span>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem' }}>
-              Precision Plant Pathology Diagnostics
-            </h3>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(240, 247, 243, 0.85)', lineHeight: 1.6, margin: 0 }}>
-              Trained on 110 crops, 285 plant diseases, and 92 pest attacks. Snap a photo or upload an image to receive instant diagnostic confidence and ICAR/CIBRC approved organic remedies.
-            </p>
-          </div>
-        </div>
+        <h2 className="segment-header-title">Leaf Disease Scanner & Diagnosis</h2>
       </div>
 
       {/* ── Upload Panel at Top (Full Width) ── */}
