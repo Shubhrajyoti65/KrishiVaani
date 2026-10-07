@@ -67,7 +67,7 @@ graph TD
 - **Sentinel-2 Satellite NDVI**: Ingests multispectral Earth observation bands (B4 Red & B8 NIR) to compute Normalized Difference Vegetation Index (NDVI), canopy moisture, and historical vigor curves.
 
 ### 4. 💬 Context-Aware Conversational Chatbot & RAG
-- LangChain / LangGraph agent combining farmer historical profiles, soil test history, satellite vegetation data, and live Mandi prices.
+- Direct Google Gemini conversational agent combining farmer historical profiles, soil test history, satellite vegetation data, and live Mandi prices.
 - Persistent session memory stored per farmer in MongoDB with zero cold-start latency.
 
 ---

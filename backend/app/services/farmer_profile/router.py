@@ -74,6 +74,20 @@ async def update_farmer_profile(farmer_id: str, update: FarmerProfileUpdate) -> 
         )
     return updated
 
+@router.delete(
+    "/{farmer_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete a farmer profile and associated history"
+)
+async def delete_farmer_profile(farmer_id: str):
+    deleted = await farmer_repository.delete_farmer(farmer_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farmer profile with ID '{farmer_id}' not found."
+        )
+    return {"status": "success", "message": f"Farmer profile '{farmer_id}' deleted successfully"}
+
 @router.post(
     "/{farmer_id}/soil-tests",
     response_model=SoilTestRecordResponse,

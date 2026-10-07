@@ -146,6 +146,10 @@ class FarmHistoryRecordCreate(BaseModel):
                 data["crop"] = data["crop_name"]
             if "yield_quintals" in data and "yield_obtained_quintals" not in data:
                 data["yield_obtained_quintals"] = data["yield_quintals"]
+            if "yield_obtained_qtl" in data and "yield_obtained_quintals" not in data:
+                data["yield_obtained_quintals"] = data["yield_obtained_qtl"]
+            if "yield_qtl" in data and "yield_obtained_quintals" not in data:
+                data["yield_obtained_quintals"] = data["yield_qtl"]
             if "cost_incurred_inr" in data and "production_cost_inr" not in data:
                 data["production_cost_inr"] = data["cost_incurred_inr"]
             if "gross_return_inr" in data and "revenue_inr" not in data:

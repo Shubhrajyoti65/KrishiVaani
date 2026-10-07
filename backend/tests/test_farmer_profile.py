@@ -144,3 +144,46 @@ def test_farm_history_logging_and_retrieval():
     assert alias_res.status_code == 200
     assert len(alias_res.json()) >= 1
 
+    # Test yield_obtained_qtl alias
+    alias_record_payload = {
+        "crop": "Mustard",
+        "season": "Rabi",
+        "year": 2023,
+        "area_acres": 2.0,
+        "yield_obtained_qtl": 30.0,
+        "production_cost_inr": 20000.0,
+        "revenue_inr": 60000.0
+    }
+    alias_post_res = client.post(f"/api/v1/farmers/{farmer_id}/farm-history", json=alias_record_payload)
+    assert alias_post_res.status_code == 201
+    assert alias_post_res.json()["yield_obtained_quintals"] == 30.0
+
+def test_delete_farmer_profile():
+    # Create temporary farmer
+    temp_payload = {
+        "phone_number": "+919999888877",
+        "name": "Temporary Farmer",
+        "state": "Punjab",
+        "district": "Ludhiana",
+        "village": "Khanna",
+        "soil_type": "Loamy",
+        "land_area_acres": 3.0,
+        "preferred_language": "pa"
+    }
+    create_res = client.post("/api/v1/farmers/", json=temp_payload)
+    assert create_res.status_code == 201
+    temp_id = create_res.json()["id"]
+
+    # Delete farmer
+    del_res = client.delete(f"/api/v1/farmers/{temp_id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "success"
+
+    # Verify not found
+    get_res = client.get(f"/api/v1/farmers/{temp_id}")
+    assert get_res.status_code == 404
+
+    # Delete non-existent farmer returns 404
+    del_res_again = client.delete(f"/api/v1/farmers/{temp_id}")
+    assert del_res_again.status_code == 404
+

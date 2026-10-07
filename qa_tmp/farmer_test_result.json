@@ -1,0 +1,11 @@
+{
+  "farmer_id": "f_4b52f2792b59",
+  "create_time": 4.378723859786987,
+  "read_time": 2.1310784816741943,
+  "update_time": 9.112832069396973,
+  "soil_time": 3.381141185760498,
+  "history_add_time": 2.047475576400757,
+  "history_get_time": 2.2107126712799072,
+  "full_history_time": 2.215076446533203,
+  "mongo_verified": true
+}

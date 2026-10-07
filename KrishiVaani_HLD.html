@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrishiVaani — High-Level Design (HLD) Document</title>
+  <style>
+    :root {
+      --bg-primary: #0b1120;
+      --bg-secondary: #131d33;
+      --bg-card: #1e293b;
+      --bg-card-hover: #27354f;
+      --text-main: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --brand-green: #10b981;
+      --brand-green-light: #34d399;
+      --brand-green-dark: #059669;
+      --brand-green-glow: rgba(16, 185, 129, 0.25);
+      --border-color: #334155;
+      --border-light: #475569;
+      --accent-blue: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+      --code-bg: #0f172a;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --brand-green: #059669;
+      --brand-green-light: #10b981;
+      --brand-green-dark: #047857;
+      --brand-green-glow: rgba(5, 150, 105, 0.2);
+      --border-color: #e2e8f0;
+      --border-light: #cbd5e1;
+      --accent-blue: #0284c7;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --accent-purple: #9333ea;
+      --code-bg: #f1f5f9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+    body { font-family: var(--font-family); background-color: var(--bg-primary); color: var(--text-main); line-height: 1.65; display: flex; min-height: 100vh; }
+    
+    #sidebar {
+      width: 310px; background-color: var(--bg-secondary); border-right: 1px solid var(--border-color);
+      position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 1.5rem 1rem;
+      display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;
+    }
+    #content-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    header.top-header {
+      position: sticky; top: 0; background-color: rgba(19, 29, 51, 0.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color); padding: 0.85rem 2.5rem; display: flex;
+      justify-content: space-between; align-items: center; z-index: 40;
+    }
+    [data-theme="light"] header.top-header { background-color: rgba(255, 255, 255, 0.92); }
+    main.doc-main { padding: 2.5rem 3rem; max-width: 1300px; margin: 0 auto; width: 100%; }
+
+    .sidebar-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+    .brand-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--brand-green), var(--brand-green-dark)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px var(--brand-green-glow); }
+    .brand-text h1 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em; }
+    .brand-text span { font-size: 0.72rem; color: var(--brand-green); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .search-container { margin-bottom: 1.25rem; position: relative; }
+    .search-input { width: 100%; background-color: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.55rem 0.85rem 0.55rem 2.2rem; border-radius: 8px; font-size: 0.85rem; outline: none; }
+    .search-input:focus { border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-glow); }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+
+    .toc-nav { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
+    .toc-item { display: flex; align-items: center; padding: 0.38rem 0.65rem; border-radius: 6px; color: var(--text-secondary); text-decoration: none; font-size: 0.83rem; transition: all 0.15s ease; }
+    .toc-item:hover { color: var(--text-main); background-color: var(--bg-card); }
+    .toc-item.active { color: var(--brand-green-light); background-color: rgba(16, 185, 129, 0.12); font-weight: 600; border-left: 3px solid var(--brand-green); }
+    .toc-item span.sec-num { display: inline-block; min-width: 26px; color: var(--text-muted); font-size: 0.76rem; font-family: var(--font-mono); }
+    .toc-item.active span.sec-num { color: var(--brand-green); }
+
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .btn { padding: 0.45rem 0.85rem; border-radius: 6px; font-size: 0.82rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; }
+    .btn:hover { background-color: var(--bg-card-hover); border-color: var(--border-light); }
+    .btn-primary { background-color: var(--brand-green); border-color: var(--brand-green-dark); color: #ffffff; }
+    .btn-primary:hover { background-color: var(--brand-green-dark); }
+
+    .hero-banner { background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.2rem; margin-bottom: 2.5rem; position: relative; overflow: hidden; }
+    .doc-tag { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: rgba(16, 185, 129, 0.15); border: 1px solid var(--brand-green); color: var(--brand-green-light); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .doc-title { font-size: 2.3rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 0.6rem; }
+    .doc-subtitle { font-size: 1.05rem; color: var(--text-secondary); max-width: 860px; margin-bottom: 1.4rem; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.2rem; }
+    .meta-item { font-size: 0.82rem; }
+    .meta-label { color: var(--text-muted); margin-bottom: 0.15rem; font-weight: 500; }
+    .meta-value { color: var(--text-main); font-weight: 600; }
+
+    section.hld-section { margin-bottom: 3.5rem; scroll-margin-top: 5rem; }
+    .section-header { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 1.25rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color); }
+    .section-num { font-family: var(--font-mono); color: var(--brand-green); font-weight: 700; font-size: 1.35rem; }
+    .section-title { font-size: 1.65rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em; }
+    h3.sub-title { font-size: 1.18rem; font-weight: 600; color: var(--text-main); margin: 1.8rem 0 0.85rem 0; display: flex; align-items: center; gap: 0.5rem; }
+    h3.sub-title::before { content: ""; width: 4px; height: 1.1rem; background-color: var(--brand-green); border-radius: 2px; display: inline-block; }
+    p { color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem; }
+
+    .callout { border-radius: 10px; padding: 1.2rem 1.4rem; margin: 1.25rem 0; border-left: 4px solid var(--brand-green); background-color: rgba(16, 185, 129, 0.08); border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+    .callout.info { border-left-color: var(--accent-blue); background-color: rgba(56, 189, 248, 0.08); }
+    .callout.warning { border-left-color: var(--accent-amber); background-color: rgba(245, 158, 11, 0.08); }
+    .callout-header { font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; color: var(--text-main); }
+    .callout p { margin-bottom: 0; font-size: 0.9rem; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 1.25rem; margin: 1.25rem 0; }
+    .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.35rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); border-color: var(--border-light); }
+    .card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem; }
+
+    .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--brand-green-light); border: 1px solid var(--brand-green); }
+    .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+
+    .table-container { width: 100%; overflow-x: auto; margin: 1.25rem 0; border: 1px solid var(--border-color); border-radius: 10px; background-color: var(--bg-card); }
+    table.doc-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+    table.doc-table th { background-color: var(--bg-secondary); color: var(--text-main); font-weight: 600; padding: 0.85rem 1.1rem; border-bottom: 2px solid var(--border-color); white-space: nowrap; }
+    table.doc-table td { padding: 0.78rem 1.1rem; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); vertical-align: top; }
+    table.doc-table tr:last-child td { border-bottom: none; }
+    table.doc-table tr:hover td { background-color: rgba(255, 255, 255, 0.02); color: var(--text-main); }
+
+    code { font-family: var(--font-mono); background-color: var(--code-bg); color: var(--brand-green-light); padding: 0.18rem 0.42rem; border-radius: 4px; font-size: 0.84em; border: 1px solid var(--border-color); }
+    .diagram-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+    .diagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+    .diagram-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
+    .diagram-caption { font-size: 0.8rem; color: var(--text-muted); }
+    svg.diagram-svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+
+    .code-block { background-color: var(--code-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.2rem; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.84rem; color: #e2e8f0; overflow-x: auto; line-height: 1.55; }
+    
+    #back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background-color: var(--brand-green); color: #ffffff; border: none; box-shadow: 0 4px 14px var(--brand-green-glow); cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transform: translateY(10px); transition: all 0.25s ease; z-index: 99; }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+
+    @media print {
+      #sidebar, header.top-header, #back-to-top, .search-container { display: none !important; }
+      body { background: #ffffff !important; color: #000000 !important; }
+      #content-wrapper { margin: 0 !important; padding: 0 !important; }
+      main.doc-main { max-width: 100% !important; padding: 0 !important; }
+      .card, .table-container, .diagram-card, .callout { border-color: #cbd5e1 !important; background: #ffffff !important; color: #000000 !important; box-shadow: none !important; page-break-inside: avoid; }
+      p, td, .meta-value, .card-title, .section-title { color: #000000 !important; }
+    }
+    @media (max-width: 1024px) { #sidebar { display: none; } main.doc-main { padding: 1.5rem; } }
+  </style>
+</head>
+<body>
+  <!-- LEFT SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"></path>
+          <path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"></path>
+          <path d="M5 21h14"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>KrishiVaani</h1>
+        <span>HLD Specification</span>
+      </div>
+    </div>
+
+    <div class="search-container">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="sec-search" class="search-input" placeholder="Filter sections..." oninput="filterSections()">
+    </div>
+
+    <nav class="toc-nav" id="toc-list">
+      <a href="#sec-status" class="toc-item"><span class="sec-num">00</span> Architecture Status</a>
+      <a href="#sec-1" class="toc-item"><span class="sec-num">01</span> Executive Summary</a>
+      <a href="#sec-2" class="toc-item"><span class="sec-num">02</span> Problem Statement</a>
+      <a href="#sec-3" class="toc-item"><span class="sec-num">03</span> Functional Requirements</a>
+      <a href="#sec-4" class="toc-item"><span class="sec-num">04</span> Non-Functional Requirements</a>
+      <a href="#sec-5" class="toc-item"><span class="sec-num">05</span> System Architecture</a>
+      <a href="#sec-6" class="toc-item"><span class="sec-num">06</span> Component Architecture</a>
+      <a href="#sec-7" class="toc-item"><span class="sec-num">07</span> Data Flow Diagrams</a>
+      <a href="#sec-8" class="toc-item"><span class="sec-num">08</span> Database Design (MongoDB)</a>
+      <a href="#sec-9" class="toc-item"><span class="sec-num">09</span> REST API Design</a>
+      <a href="#sec-10" class="toc-item"><span class="sec-num">10</span> Auth & Authorization</a>
+      <a href="#sec-11" class="toc-item"><span class="sec-num">11</span> Security Architecture</a>
+      <a href="#sec-12" class="toc-item"><span class="sec-num">12</span> ML Architecture</a>
+      <a href="#sec-13" class="toc-item"><span class="sec-num">13</span> RAG Architecture</a>
+      <a href="#sec-14" class="toc-item"><span class="sec-num">14</span> External API Integration</a>
+      <a href="#sec-15" class="toc-item"><span class="sec-num">15</span> Deployment Architecture</a>
+      <a href="#sec-16" class="toc-item"><span class="sec-num">16</span> Scalability Framework</a>
+      <a href="#sec-17" class="toc-item"><span class="sec-num">17</span> Reliability & Failover</a>
+      <a href="#sec-18" class="toc-item"><span class="sec-num">18</span> Monitoring & Observability</a>
+      <a href="#sec-19" class="toc-item"><span class="sec-num">19</span> CI/CD Architecture</a>
+      <a href="#sec-20" class="toc-item"><span class="sec-num">20</span> Future Enhancements</a>
+      <a href="#sec-21" class="toc-item"><span class="sec-num">21</span> Technology Stack Summary</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN BODY WRAPPER -->
+  <div id="content-wrapper">
+    <header class="top-header">
+      <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: var(--brand-green);"></span>
+        System Design Specification · Enterprise Engineering Review
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="toggleTheme()" id="theme-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          Theme
+        </button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Export PDF / Print
+        </button>
+      </div>
+    </header>
+
+    <main class="doc-main">
+      <!-- HERO BANNER -->
+      <div class="hero-banner">
+        <div class="doc-tag">High-Level Design Document · Version 2.4</div>
+        <h1 class="doc-title">KrishiVaani (कृषिवाणी)</h1>
+        <p class="doc-subtitle">
+          An AI/ML-driven precision agricultural decision-support and agronomic intelligence platform designed for Indian farmers, integrating predictive ML, Computer Vision diagnostics, Domain RAG, and regional multilingual voice interaction.
+        </p>
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">ARCHITECTURE STATUS</div>
+            <div class="meta-value" style="color: var(--brand-green-light);">Proposed Production Architecture</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">TARGET AUDIENCE</div>
+            <div class="meta-value">Indian Farmers, KVK Officers, Agtech</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">CORE PROTOCOL</div>
+            <div class="meta-value">RESTful APIs over HTTPS / TLS 1.3</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">LAST UPDATED</div>
+            <div class="meta-value">October 2026 · Software Engineering Review</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARCHITECTURE STATUS CALLOUT -->
+      <section id="sec-status" class="hld-section">
+        <div class="callout">
+          <div class="callout-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            Architecture Status & Baseline Scope Declaration
+          </div>
+          <p>
+            <strong>Official Engineering Disclosure:</strong> This High-Level Design (HLD) document defines the <strong>target production-grade, distributed microservices architecture</strong> for the KrishiVaani enterprise ecosystem. The design decouples web presentation (React/Vite + Tailwind CSS), API orchestration and gateway security (Node.js + Express.js), low-latency analytical model serving (Python FastAPI with Scikit-learn and PyTorch/CNN), domain retrieval-augmented generation (FAISS Vector Index + LangChain RAG pipeline), and scalable multi-tenant document persistence (MongoDB Atlas). External integrations include Sarvam AI (Indian language Speech-to-Text, Neural TTS, and Mayura translation), OpenWeatherMap, and Cloudinary. Components currently operating in single-node prototypes are clearly highlighted alongside their migration path to this production baseline.
+          </p>
+        </div>
+      </section>
+
+      <!-- SECTION 1: EXECUTIVE SUMMARY -->
+      <section id="sec-1" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">01</span>
+          <h2 class="section-title">Executive Summary</h2>
+        </div>
+        <p>
+          <strong>KrishiVaani (कृषिवाणी)</strong> is an enterprise-grade, AI-powered agricultural intelligence platform designed to empower smallholder and commercial farmers across Bharat with scientific, data-driven farming decisions. Operating at the intersection of precision agriculture, predictive machine learning, edge computer vision, and generative AI, KrishiVaani delivers personalized agronomic guidance spanning the entire agricultural lifecycle—from pre-sowing soil evaluation to harvest yield optimization and plant disease containment.
+        </p>
+        <p>
+          The platform addresses structural inefficiencies in Indian agriculture where over 140 million farmers face declining soil fertility, extreme weather shocks, pest invasions, and unpredictable market realizations. By consolidating distributed agronomic intelligence into an intuitive, voice-enabled web and mobile interface, KrishiVaani bridges the severe digital and linguistic divide prevalent in rural agricultural ecosystems.
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="badge badge-green" style="margin-bottom:0.5rem;">Target Demographic</div>
+            <div class="card-title">Marginal & Smallholder Farmers</div>
+            <p style="font-size:0.88rem; margin:0;">
+              Over 86% of Indian farmers cultivate land holdings under 2 hectares. KrishiVaani offers regional language support (Hindi, Odia, Marathi, Telugu) and speech synthesis to democratize access regardless of digital literacy.
+            </p>
+          </div>
+          <div class="card">
+            <div class="badge badge-blue" style="margin-bottom:0.5rem;">Intelligence Layer</div>
+            <div class="card-title">Multimodal AI/ML Architecture</div>
+            <p style="font-size:0.88rem; margin:0;">
+              Combines supervised classification (XGBoost/RandomForest) for crop choice, polynomial regression for harvest yield, PyTorch/CNN for leaf pathology, and vector-indexed RAG for real-time agronomic counseling.
+            </p>
+          </div>
+          <div class="card">
+            <div class="badge badge-amber" style="margin-bottom:0.5rem;">System Topology</div>
+            <div class="card-title">Decoupled Microservices</div>
+            <p style="font-size:0.88rem; margin:0;">
+              Employs an asynchronous Node.js Express API Gateway for orchestrating requests, a high-throughput Python FastAPI microservice for ML/CV inference, and MongoDB Atlas for distributed document state management.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: PROBLEM STATEMENT -->
+      <section id="sec-2" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">02</span>
+          <h2 class="section-title">Problem Statement</h2>
+        </div>
+        <p>
+          Indian agriculture contributes nearly 18% to the national GDP and sustains more than 50% of the workforce, yet productivity per hectare lags significantly behind global benchmarks. The agricultural community suffers from fragmented advisories, lack of localized soil testing, and delayed responses to crop distress. KrishiVaani targets seven foundational challenges:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title" style="color:var(--brand-green-light);">1. Suboptimal Crop Selection</div>
+            <p style="font-size:0.88rem;">Farmers frequently plant traditional monocultures without analyzing macro/micronutrients (Nitrogen, Phosphorus, Potassium), soil pH, and seasonal precipitation, causing chronic yield depletion and soil nutrient exhaustion.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--brand-green-light);">2. Information Asymmetry & Generic Advice</div>
+            <p style="font-size:0.88rem;">Broadcast advisories over radio and television lack farm-specific granularity. Farmers lack access to personalized agronomic recommendations calibrated to their exact soil profile and microclimate.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--accent-rose);">3. Misdiagnosed Plant Pathology</div>
+            <p style="font-size:0.88rem;">Fungal blights, viral mosaics, and pest infestations are misidentified or identified too late. Farmers overuse toxic broad-spectrum chemicals, inflating operational costs and poisoning soil microbiomes.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--accent-amber);">4. Yield & Harvest Uncertainty</div>
+            <p style="font-size:0.88rem;">Absence of scientific yield estimation prevents farmers from securing optimal crop insurance, forward contracts, storage logistics, and accurate credit appraisals from financial institutions.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--accent-blue);">5. Unpredictable Climate Volatility</div>
+            <p style="font-size:0.88rem;">Erratic monsoon cycles and sudden heat waves destroy unshielded crops. Farmers require localized meteorological telemetry tied directly to sowing, irrigation, and pesticide spray advisories.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--accent-purple);">6. Regional Linguistic Barriers</div>
+            <p style="font-size:0.88rem;">Over 70% of digital agricultural portals operate exclusively in formal English or Hindi, alienating millions of farmers who communicate primarily in regional dialects and prefer voice over text input.</p>
+          </div>
+          <div class="card">
+            <div class="card-title" style="color:var(--brand-green);">7. Unbudgeted Production Overheads</div>
+            <p style="font-size:0.88rem;">Farmers rarely budget input expenses (seeds, fertilizers, labor, irrigation, diesel) against expected Mandi prices (MSP), resulting in unanticipated financial losses and severe debt cycles.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: FUNCTIONAL REQUIREMENTS -->
+      <section id="sec-3" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">03</span>
+          <h2 class="section-title">Functional Requirements</h2>
+        </div>
+        <p>
+          The system's functional architecture covers seven functional pillars spanning data ingestion, predictive inference, conversational intelligence, and multimedia telemetry:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th style="width: 18%;">Feature Module</th>
+                <th style="width: 25%;">Requirement ID & Name</th>
+                <th style="width: 37%;">Detailed Functional Description</th>
+                <th style="width: 20%;">Primary Component</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Crop Recommendation</strong></td>
+                <td><code>FR-CR-01</code> Multi-Factor Soil & Agro-Ecological Advisory</td>
+                <td>Ingests Nitrogen (N), Phosphorus (P), Potassium (K) in mg/kg, soil pH, temperature, relative humidity, and rainfall. Preprocesses inputs and executes an ensemble ML classifier to return top 3 recommended crops with confidence percentages, sowing windows, and agronomic rationale.</td>
+                <td><span class="badge badge-green">ML Service (FastAPI)</span></td>
+              </tr>
+              <tr>
+                <td><strong>2. Yield Prediction</strong></td>
+                <td><code>FR-YP-01</code> Historical Multi-Variate Yield Forecasting</td>
+                <td>Accepts crop type, cultivated acreage, state/district location, agricultural season (Kharif, Rabi, Zaid), and fertilizer dosages. Employs regression modeling on historical ICAR yield datasets to forecast harvest in quintals/acre with MSP revenue projections.</td>
+                <td><span class="badge badge-green">ML Service (FastAPI)</span></td>
+              </tr>
+              <tr>
+                <td><strong>3. AI Chatbot</strong></td>
+                <td><code>FR-CB-01</code> Domain-Restricted RAG Agricultural Assistant</td>
+                <td>Conversational assistant (KrishiMitra) executing semantic search over vector-indexed agronomic literature via FAISS. Augments queries with farmer location, soil tests, and ICAR guidelines; generates grounded advice via LLM with strict refusal of non-farming queries.</td>
+                <td><span class="badge badge-purple">RAG / LangChain Service</span></td>
+              </tr>
+              <tr>
+                <td><strong>4. Disease Detection</strong></td>
+                <td><code>FR-DD-01</code> Leaf Pathology Computer Vision Diagnostics</td>
+                <td>Farmer uploads leaf image via mobile camera. Uploads to Cloudinary, runs Deep Learning CNN classifier to detect 15+ crop leaf diseases (Blight, Rust, Mosaic, Rot), returning disease identification, confidence score, organic bio-remedies, chemical dosages, and KVK referral rules.</td>
+                <td><span class="badge badge-rose" style="background:rgba(244,63,94,0.15);color:var(--accent-rose);border:1px solid var(--accent-rose);">Vision Service (CNN)</span></td>
+              </tr>
+              <tr>
+                <td><strong>5. Weather Integration</strong></td>
+                <td><code>FR-WI-01</code> Geolocation-Aware Weather & Alert Engine</td>
+                <td>Retrieves real-time temperature, humidity, precipitation probability, wind speed, and 5-day agro-meteorological forecasts using latitude/longitude or district. Triggers automated warnings against irrigation or fertilizer application during forecast rain.</td>
+                <td><span class="badge badge-blue">Backend Gateway / Weather API</span></td>
+              </tr>
+              <tr>
+                <td><strong>6. Production Cost</strong></td>
+                <td><code>FR-PC-01</code> Input Costing & Net Margin Calculator</td>
+                <td>Calculates comprehensive agricultural cost of cultivation (seeds, fertilizer NPK, labor person-days, irrigation fuel, pesticides, machinery). Contrasts input investment against projected yield and Minimum Support Price (MSP) to forecast net profit/acre.</td>
+                <td><span class="badge badge-amber">Node.js Express Gateway</span></td>
+              </tr>
+              <tr>
+                <td><strong>7. Voice & Languages</strong></td>
+                <td><code>FR-VL-01</code> Multilingual Speech-to-Speech Processing</td>
+                <td>Integrates Sarvam AI API for Indian regional language processing: Saaras (STT) converts farmer spoken input into text, Mayura translates across Hindi, Odia, Bengali, Marathi, and Bulbul (TTS) synthesizes natural regional voice responses.</td>
+                <td><span class="badge badge-purple">Sarvam AI Integration Service</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 4: NON-FUNCTIONAL REQUIREMENTS -->
+      <section id="sec-4" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">04</span>
+          <h2 class="section-title">Non-Functional Requirements</h2>
+        </div>
+        <p>
+          The architecture guarantees robust enterprise performance, strict data privacy, and graceful degradation even under harsh rural connectivity conditions:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">1. Scalability</span>
+              <span class="badge badge-blue">Horizontal</span>
+            </div>
+            <p style="font-size:0.88rem;">Stateless Node.js gateway and FastAPI microservices designed for horizontal autoscaling behind reverse proxies. Supports concurrent spikes up to 5,000 active farmer sessions during sowing seasons without performance degradation.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">2. Availability</span>
+              <span class="badge badge-green">99.9% SLA</span>
+            </div>
+            <p style="font-size:0.88rem;">Multi-region deployment across redundant cloud zones with automated health checks, container restarts, and circuit breakers preventing cascading service failures.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">3. Latency & Performance</span>
+              <span class="badge badge-amber">&lt; 1.5s p95</span>
+            </div>
+            <p style="font-size:0.88rem;">ML inference latency under 250ms for tabular models (XGBoost); under 800ms for CNN leaf disease classification; RAG response generation under 2.5s with streaming chunks enabled.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">4. Security & Compliance</span>
+              <span class="badge badge-rose" style="background:rgba(244,63,94,0.15);color:var(--accent-rose);border:1px solid var(--accent-rose);">Zero-Trust</span>
+            </div>
+            <p style="font-size:0.88rem;">Enforces HTTPS/TLS 1.3 encryption in transit, bcrypt (cost factor 12) password hashing, short-lived signed JWT bearer tokens, CORS origin restrictions, and strict input schema sanitization.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">5. Fault Tolerance</span>
+              <span class="badge badge-purple">Graceful Fallback</span>
+            </div>
+            <p style="font-size:0.88rem;">External API timeouts (Weather, Sarvam, LLM) gracefully degrade to cached telemetry, offline agronomy heuristics, or fallback browser speech synthesis with zero white-screen errors.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">6. Data Privacy</span>
+              <span class="badge badge-green">DPDP Act Compliant</span>
+            </div>
+            <p style="font-size:0.88rem;">Strict adherence to India’s Digital Personal Data Protection (DPDP) Act 2023. Farmer coordinates, mobile numbers, and land ownership records are encrypted at rest using AES-256 in MongoDB Atlas.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">7. Maintainability</span>
+              <span class="badge badge-blue">Modular Clean Arch</span>
+            </div>
+            <p style="font-size:0.88rem;">Clear separation of concerns into repository, service, and routing layers. Centralized environment configuration with Pydantic settings and automated linting/formatting pipelines.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">8. Observability</span>
+              <span class="badge badge-amber">Full Tracing</span>
+            </div>
+            <p style="font-size:0.88rem;">Structured JSON application logs with correlation IDs, Prometheus metrics tracking inference throughput and error rates, and Sentry integration for real-time unhandled exception telemetry.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">9. Reliability</span>
+              <span class="badge badge-green">Idempotent</span>
+            </div>
+            <p style="font-size:0.88rem;">Transactional state updates where required, automated database connection pool management, and retry policies with exponential backoff on transient third-party failures.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <span class="card-title">10. Extensibility</span>
+              <span class="badge badge-purple">Open Integration</span>
+            </div>
+            <p style="font-size:0.88rem;">Plugin architecture designed to integrate future telemetry sources including Sentinel-2 NDVI satellite bands, IoT soil moisture probes, and Agmarknet Mandi wholesale price feeds without schema redesign.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: SYSTEM ARCHITECTURE -->
+      <section id="sec-5" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">05</span>
+          <h2 class="section-title">System Architecture</h2>
+        </div>
+        <p>
+          KrishiVaani utilizes a decoupled, multi-tier microservices architecture engineered for high availability, fault isolation, and independent scalability. The presentation layer connects to a central Node.js/Express API Gateway that authenticates requests, enforces security policies, coordinates data aggregation from MongoDB Atlas, and delegates heavy analytical workloads to specialized Python FastAPI microservices and external cloud APIs.
+        </p>
+
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              KrishiVaani End-to-End Enterprise System Architecture Diagram
+            </div>
+            <span class="badge badge-green">Production Topology</span>
+          </div>
+
+          <svg class="diagram-svg" viewBox="0 0 1000 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g-client" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0369a1"/></linearGradient>
+              <linearGradient id="g-gateway" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#047857"/></linearGradient>
+              <linearGradient id="g-db" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+              <linearGradient id="g-ml" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+              <linearGradient id="g-ext" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#334155"/></linearGradient>
+              <linearGradient id="g-rag" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#db2777"/><stop offset="100%" stop-color="#be185d"/></linearGradient>
+              <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/></filter>
+              <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#94a3b8"/>
+              </marker>
+              <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981"/>
+              </marker>
+            </defs>
+
+            <!-- TIER BOUNDARIES -->
+            <!-- Client Layer -->
+            <rect x="30" y="20" width="940" height="95" rx="12" fill="#1e293b" stroke="#334155" stroke-dasharray="4 4"/>
+            <text x="50" y="45" fill="#64748b" font-size="12" font-weight="700" letter-spacing="1">TIER 1: PRESENTATION & CLIENT LAYER (VERCEL CDN)</text>
+
+            <!-- Client Box -->
+            <rect x="250" y="38" width="500" height="60" rx="10" fill="url(#g-client)" filter="url(#shadow)"/>
+            <text x="500" y="65" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">React.js + Vite + Tailwind CSS Single Page Application</text>
+            <text x="500" y="84" fill="#bae6fd" font-size="12" text-anchor="middle">Responsive Dashboard · Audio Recording (Mic) · Image Capture · PWA Capabilities</text>
+
+            <!-- Arrow Client -> Gateway -->
+            <line x1="500" y1="98" x2="500" y2="160" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+            <text x="515" y="135" fill="#10b981" font-size="11" font-weight="600">HTTPS / REST (TLS 1.3)</text>
+
+            <!-- API Gateway Layer -->
+            <rect x="30" y="160" width="940" height="110" rx="12" fill="#1e293b" stroke="#334155" stroke-dasharray="4 4"/>
+            <text x="50" y="185" fill="#64748b" font-size="12" font-weight="700" letter-spacing="1">TIER 2: API GATEWAY & ORCHESTRATION LAYER (NODE.JS + EXPRESS / RENDER)</text>
+
+            <!-- Gateway Box -->
+            <rect x="180" y="195" width="640" height="60" rx="10" fill="url(#g-gateway)" filter="url(#shadow)"/>
+            <text x="500" y="222" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">Node.js Express.js API Gateway & Security Orchestrator</text>
+            <text x="500" y="241" fill="#a7f3d0" font-size="12" text-anchor="middle">JWT Authentication · Rate Limiting · Route Guards · Service Coordination · Error Handling</text>
+
+            <!-- Connector lines from Gateway -->
+            <!-- To MongoDB -->
+            <path d="M 280 255 L 280 340 L 150 340 L 150 365" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            <!-- To ML Service -->
+            <line x1="500" y1="255" x2="500" y2="365" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+            <!-- To External Services -->
+            <path d="M 720 255 L 720 340 L 850 340 L 850 365" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+            <!-- TIER 3: SERVICES LAYER -->
+            <!-- MongoDB Box -->
+            <g transform="translate(40, 365)">
+              <rect x="0" y="0" width="220" height="135" rx="10" fill="url(#g-db)" filter="url(#shadow)"/>
+              <text x="110" y="28" fill="#ffffff" font-size="15" font-weight="700" text-anchor="middle">MongoDB Atlas</text>
+              <text x="110" y="46" fill="#fde68a" font-size="11" text-anchor="middle">Managed Distributed Cluster</text>
+              <line x1="15" y1="58" x2="205" y2="58" stroke="rgba(255,255,255,0.2)"/>
+              <text x="20" y="76" fill="#fff" font-size="11">• User Auth & Profiles</text>
+              <text x="20" y="94" fill="#fff" font-size="11">• Crop & Yield Logs</text>
+              <text x="20" y="112" fill="#fff" font-size="11">• Chat Session Threads</text>
+              <text x="20" y="128" fill="#fff" font-size="11">• Disease History Records</text>
+            </g>
+
+            <!-- ML & AI Service Box (FastAPI) -->
+            <g transform="translate(300, 365)">
+              <rect x="0" y="0" width="400" height="135" rx="10" fill="url(#g-ml)" filter="url(#shadow)"/>
+              <text x="200" y="28" fill="#ffffff" font-size="15" font-weight="700" text-anchor="middle">FastAPI ML & Vision Microservice</text>
+              <text x="200" y="46" fill="#ddd6fe" font-size="11" text-anchor="middle">Asynchronous High-Throughput Inference</text>
+              <line x1="20" y1="58" x2="380" y2="58" stroke="rgba(255,255,255,0.2)"/>
+              <rect x="20" y="70" width="170" height="52" rx="6" fill="rgba(0,0,0,0.2)"/>
+              <text x="105" y="89" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Crop & Yield Engines</text>
+              <text x="105" y="107" fill="#ddd6fe" font-size="10" text-anchor="middle">Scikit-learn / XGBoost</text>
+              <rect x="210" y="70" width="170" height="52" rx="6" fill="rgba(0,0,0,0.2)"/>
+              <text x="295" y="89" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Disease CNN Classifier</text>
+              <text x="295" y="107" fill="#ddd6fe" font-size="10" text-anchor="middle">PyTorch / MobileNetV2</text>
+            </g>
+
+            <!-- External APIs Box -->
+            <g transform="translate(740, 365)">
+              <rect x="0" y="0" width="220" height="135" rx="10" fill="url(#g-ext)" filter="url(#shadow)"/>
+              <text x="110" y="28" fill="#ffffff" font-size="15" font-weight="700" text-anchor="middle">Third-Party Cloud APIs</text>
+              <text x="110" y="46" fill="#cbd5e1" font-size="11" text-anchor="middle">Managed SaaS Integrations</text>
+              <line x1="15" y1="58" x2="205" y2="58" stroke="rgba(255,255,255,0.2)"/>
+              <text x="20" y="76" fill="#fff" font-size="11">• OpenWeatherMap (API)</text>
+              <text x="20" y="94" fill="#fff" font-size="11">• Sarvam AI (STT / TTS)</text>
+              <text x="20" y="112" fill="#fff" font-size="11">• Cloudinary (Media CDN)</text>
+              <text x="20" y="128" fill="#fff" font-size="11">• Google Gemini / OpenAI</text>
+            </g>
+
+            <!-- Downward Arrow from ML Service to RAG Pipeline -->
+            <line x1="500" y1="500" x2="500" y2="540" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- TIER 4: RAG & KNOWLEDGE PIPELINE -->
+            <g transform="translate(180, 540)">
+              <rect x="0" y="0" width="640" height="110" rx="10" fill="url(#g-rag)" filter="url(#shadow)"/>
+              <text x="320" y="26" fill="#ffffff" font-size="15" font-weight="700" text-anchor="middle">RAG Agricultural Intelligence Engine (LangChain + FAISS)</text>
+              <text x="320" y="45" fill="#fbcfe8" font-size="11" text-anchor="middle">Domain Knowledge Augmentation & Grounded Response Generation</text>
+              <line x1="20" y1="55" x2="620" y2="55" stroke="rgba(255,255,255,0.2)"/>
+              
+              <rect x="25" y="65" width="180" height="35" rx="6" fill="rgba(0,0,0,0.25)"/>
+              <text x="115" y="87" fill="#ffffff" font-size="11" text-anchor="middle">ICAR Agronomy Corpus</text>
+
+              <text x="220" y="87" fill="#fbcfe8" font-size="14">→</text>
+
+              <rect x="235" y="65" width="180" height="35" rx="6" fill="rgba(0,0,0,0.25)"/>
+              <text x="325" y="87" fill="#ffffff" font-size="11" text-anchor="middle">FAISS Vector Index</text>
+
+              <text x="430" y="87" fill="#fbcfe8" font-size="14">→</text>
+
+              <rect x="445" y="65" width="170" height="35" rx="6" fill="rgba(0,0,0,0.25)"/>
+              <text x="530" y="87" fill="#ffffff" font-size="11" text-anchor="middle">LLM Generation (Gemini)</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 6: COMPONENT ARCHITECTURE -->
+      <section id="sec-6" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">06</span>
+          <h2 class="section-title">Component Architecture</h2>
+        </div>
+        <p>
+          Each platform tier operates within clearly demarcated boundaries, enforcing single-responsibility principles and strict contract-based communication.
+        </p>
+
+        <h3 class="sub-title">1. Presentation Layer (React.js + Vite + Tailwind CSS)</h3>
+        <p>
+          Constructed as a modern single-page application (SPA) optimized for low-end mobile devices and erratic rural connectivity:
+        </p>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">User Authentication & Profile</div>
+            <p style="font-size:0.88rem;">JWT-driven state persistence via React Context. Captures farmer land acreage, soil type, district, and regional language preferences.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Interactive Dashboard</div>
+            <p style="font-size:0.88rem;">Visualizes current weather cards, seasonal crop calendars, recent yield predictions, and quick-action diagnostics widgets.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Disease Scanner Studio</div>
+            <p style="font-size:0.88rem;">Provides direct camera capture or gallery file upload with client-side image compression, previewing diagnosis cards with confidence meters.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">KrishiMitra Voice Chat Interface</div>
+            <p style="font-size:0.88rem;">WebSocket / REST streaming chat bubble with browser Web Speech and Sarvam neural voice playback (Hindi, Odia, English).</p>
+          </div>
+        </div>
+
+        <h3 class="sub-title">2. API Gateway & Business Layer (Node.js + Express.js)</h3>
+        <p>
+          Serves as the secure perimeter and orchestrator for KrishiVaani:
+        </p>
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Gateway Module</th><th>Responsibilities</th><th>Dependencies</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Security & Auth</strong></td>
+                <td>Issues and verifies signed JWT tokens; hashes passwords using bcrypt; validates user roles and rate limits requests.</td>
+                <td>jsonwebtoken, bcryptjs, express-rate-limit</td>
+              </tr>
+              <tr>
+                <td><strong>Service Orchestrator</strong></td>
+                <td>Aggregates weather data with soil parameters before dispatching requests to Python ML endpoints; computes financial cost-benefit models.</td>
+                <td>axios, http-proxy-middleware</td>
+              </tr>
+              <tr>
+                <td><strong>Media Ingestion</strong></td>
+                <td>Receives multipart form-data leaf uploads, enforces 5MB file caps and MIME-type verification, and streams assets to Cloudinary.</td>
+                <td>multer, cloudinary</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="sub-title">3. Machine Learning Inference Service (Python FastAPI)</h3>
+        <p>
+          A dedicated high-performance Python microservice serving serialized statistical and deep learning models:
+        </p>
+        <ul style="margin-left: 1.5rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          <li style="margin-bottom: 0.5rem;"><strong>Model Warmup & Serialization:</strong> Loads pre-trained Scikit-learn, XGBoost, and PyTorch models into shared memory at application bootstrap using <code>joblib</code> and Torch JIT, avoiding per-request I/O latency.</li>
+          <li style="margin-bottom: 0.5rem;"><strong>Vectorized Preprocessing:</strong> Enforces standard MinMax/Standard scaling, categorical encoding, and tensor normalization matching training distributions.</li>
+          <li style="margin-bottom: 0.5rem;"><strong>Versioned Endpoints:</strong> Exposes versioned endpoints (<code>/api/v1/ml/...</code>) to support canary deployments and seamless model rollback.</li>
+        </ul>
+
+        <h3 class="sub-title">4. RAG Architectural Component Workflow</h3>
+        <p>
+          The agricultural knowledge assistant couples semantic retrieval with generative LLMs to guarantee grounded, hallucination-free advisories:
+        </p>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">RAG Semantic Retrieval & Generation Flow</div>
+            <span class="badge badge-purple">LangChain + FAISS</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g-ragstep" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            </defs>
+            <rect x="10" y="50" width="130" height="75" rx="8" fill="url(#g-ragstep)" stroke="#10b981" stroke-width="1.5"/>
+            <text x="75" y="80" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Farmer Query</text>
+            <text x="75" y="100" fill="#94a3b8" font-size="10" text-anchor="middle">Natural Language</text>
+
+            <line x1="140" y1="87" x2="165" y2="87" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <rect x="165" y="50" width="130" height="75" rx="8" fill="url(#g-ragstep)" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="230" y="80" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Query Embedding</text>
+            <text x="230" y="100" fill="#94a3b8" font-size="10" text-anchor="middle">Dense Vectorizer</text>
+
+            <line x1="295" y1="87" x2="320" y2="87" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="320" y="50" width="135" height="75" rx="8" fill="url(#g-ragstep)" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="387" y="80" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">FAISS Similarity</text>
+            <text x="387" y="100" fill="#94a3b8" font-size="10" text-anchor="middle">Top-k Relevant Chunks</text>
+
+            <line x1="455" y1="87" x2="480" y2="87" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="480" y="50" width="135" height="75" rx="8" fill="url(#g-ragstep)" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="547" y="75" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Context Assembly</text>
+            <text x="547" y="93" fill="#94a3b8" font-size="10" text-anchor="middle">+ Farmer Profile</text>
+            <text x="547" y="108" fill="#94a3b8" font-size="10" text-anchor="middle">+ Weather Data</text>
+
+            <line x1="615" y1="87" x2="640" y2="87" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="640" y="50" width="130" height="75" rx="8" fill="url(#g-ragstep)" stroke="#f43f5e" stroke-width="1.5"/>
+            <text x="705" y="80" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">LLM Inference</text>
+            <text x="705" y="100" fill="#94a3b8" font-size="10" text-anchor="middle">Grounded Synthesis</text>
+
+            <line x1="770" y1="87" x2="795" y2="87" stroke="#f43f5e" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="795" y="50" width="115" height="75" rx="8" fill="url(#g-ragstep)" stroke="#10b981" stroke-width="1.5"/>
+            <text x="852" y="80" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Actionable Advice</text>
+            <text x="852" y="100" fill="#94a3b8" font-size="10" text-anchor="middle">In Local Language</text>
+          </svg>
+        </div>
+
+        <h3 class="sub-title">5. Plant Disease Detection Architecture</h3>
+        <p>
+          The computer vision diagnosis engine processes user leaf imagery through deep convolutional neural networks:
+        </p>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Computer Vision Disease Classification Pipeline</div>
+            <span class="badge badge-rose" style="background:rgba(244,63,94,0.15);color:var(--accent-rose);border:1px solid var(--accent-rose);">PyTorch CNN</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="40" width="125" height="75" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="77" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Leaf Upload</text>
+            <text x="77" y="92" fill="#94a3b8" font-size="10" text-anchor="middle">Mobile Camera / File</text>
+
+            <line x1="140" y1="77" x2="165" y2="77" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="165" y="40" width="130" height="75" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="230" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Cloudinary Storage</text>
+            <text x="230" y="92" fill="#94a3b8" font-size="10" text-anchor="middle">Secure CDN URL</text>
+
+            <line x1="295" y1="77" x2="320" y2="77" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="320" y="40" width="130" height="75" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="385" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Preprocessing</text>
+            <text x="385" y="92" fill="#94a3b8" font-size="10" text-anchor="middle">Resize 224x224, Norm</text>
+
+            <line x1="450" y1="77" x2="475" y2="77" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="475" y="40" width="135" height="75" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+            <text x="542" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">CNN Inference</text>
+            <text x="542" y="92" fill="#ddd6fe" font-size="10" text-anchor="middle">ResNet / MobileNet</text>
+
+            <line x1="610" y1="77" x2="635" y2="77" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="635" y="40" width="135" height="75" rx="8" fill="#1e293b" stroke="#10b981"/>
+            <text x="702" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Classification</text>
+            <text x="702" y="92" fill="#a7f3d0" font-size="10" text-anchor="middle">Label + Confidence %</text>
+
+            <line x1="770" y1="77" x2="795" y2="77" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <rect x="795" y="40" width="115" height="75" rx="8" fill="#1e293b" stroke="#10b981"/>
+            <text x="852" y="72" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Advisory Engine</text>
+            <text x="852" y="92" fill="#a7f3d0" font-size="10" text-anchor="middle">Bio & Chemical Fix</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 7: DATA FLOW DIAGRAMS -->
+      <section id="sec-7" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">07</span>
+          <h2 class="section-title">Data Flow Diagrams</h2>
+        </div>
+        <p>
+          This section details the synchronous and asynchronous data pipelines executing across the KrishiVaani architecture for each primary business capability:
+        </p>
+
+        <!-- FLOW A: CROP RECOMMENDATION -->
+        <h3 class="sub-title">A. Crop Recommendation Pipeline</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Data Flow A: Soil & Climate Crop Recommendation</div>
+            <span class="badge badge-green">ML Decision Engine</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">1. Farmer Input</text>
+              <text x="65" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">NPK, pH, Rainfall</text>
+            </g>
+            <line x1="140" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#0284c7"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">2. Validation</text>
+              <text x="65" y="50" fill="#bae6fd" font-size="10" text-anchor="middle">Gateway Range Check</text>
+            </g>
+            <line x1="295" y1="60" x2="320" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(320, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">3. Feature Vector</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Standard Scaling</text>
+            </g>
+            <line x1="455" y1="60" x2="480" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(480, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">4. ML Inference</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">XGBoost Classifier</text>
+            </g>
+            <line x1="615" y1="60" x2="640" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(640, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#d97706"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">5. Persistence</text>
+              <text x="67" y="50" fill="#fde68a" font-size="10" text-anchor="middle">MongoDB Atlas Log</text>
+            </g>
+            <line x1="775" y1="60" x2="800" y2="60" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(800, 25)">
+              <rect x="0" y="0" width="110" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="55" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">6. UI Response</text>
+              <text x="55" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Top 3 Crops + Tips</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- FLOW B: YIELD PREDICTION -->
+        <h3 class="sub-title">B. Harvest Yield Prediction Pipeline</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Data Flow B: Multi-Variate Yield & Revenue Forecasting</div>
+            <span class="badge badge-amber">Regression Pipeline</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">1. Farm & Crop Data</text>
+              <text x="65" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">Area, State, Season</text>
+            </g>
+            <line x1="140" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#0284c7"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">2. Historical Telemetry</text>
+              <text x="67" y="50" fill="#bae6fd" font-size="10" text-anchor="middle">Precipitation & NPK</text>
+            </g>
+            <line x1="300" y1="60" x2="325" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(325, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">3. Encoding Layer</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">One-Hot State/Crop</text>
+            </g>
+            <line x1="460" y1="60" x2="485" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(485, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">4. Yield Regressor</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Trained Yield Model</text>
+            </g>
+            <line x1="620" y1="60" x2="645" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(645, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#d97706"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">5. MSP Benchmarking</text>
+              <text x="65" y="50" fill="#fde68a" font-size="10" text-anchor="middle">Revenue Estimation</text>
+            </g>
+            <line x1="775" y1="60" x2="800" y2="60" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(800, 25)">
+              <rect x="0" y="0" width="110" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="55" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">6. Yield Card</text>
+              <text x="55" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Quintals & Revenue</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- FLOW C: DISEASE DETECTION -->
+        <h3 class="sub-title">C. Leaf Disease Computer Vision Pipeline</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Data Flow C: Computer Vision Leaf Pathology Diagnosis</div>
+            <span class="badge badge-rose" style="background:rgba(244,63,94,0.15);color:var(--accent-rose);border:1px solid var(--accent-rose);">Vision CNN</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">1. Camera Upload</text>
+              <text x="65" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">JPEG/PNG Leaf Photo</text>
+            </g>
+            <line x1="140" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#0284c7"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">2. Cloudinary CDN</text>
+              <text x="65" y="50" fill="#bae6fd" font-size="10" text-anchor="middle">Image Hosting & URL</text>
+            </g>
+            <line x1="295" y1="60" x2="320" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(320, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">3. FastAPI Ingestion</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">224x224 RGB Tensor</text>
+            </g>
+            <line x1="455" y1="60" x2="480" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(480, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">4. Deep Learning</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">PyTorch CNN Softmax</text>
+            </g>
+            <line x1="615" y1="60" x2="640" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(640, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">5. Treatment Map</text>
+              <text x="67" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Bio & Chemical Doses</text>
+            </g>
+            <line x1="775" y1="60" x2="800" y2="60" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(800, 25)">
+              <rect x="0" y="0" width="110" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="55" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">6. Farmer Card</text>
+              <text x="55" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Confidence & Steps</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- FLOW D: AI CHATBOT / RAG -->
+        <h3 class="sub-title">D. AI Chatbot / RAG Conversational Pipeline</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Data Flow D: Domain RAG Vector Retrieval & Multi-Turn Synthesis</div>
+            <span class="badge badge-purple">RAG + LLM</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">1. Farmer Query</text>
+              <text x="65" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">Text or Transcribed</text>
+            </g>
+            <line x1="140" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#a855f7"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">2. Dense Vector</text>
+              <text x="65" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Embedding API</text>
+            </g>
+            <line x1="295" y1="60" x2="320" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(320, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#a855f7"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">3. FAISS Search</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Cosine Similarity Top-3</text>
+            </g>
+            <line x1="455" y1="60" x2="480" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(480, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#f59e0b"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">4. Prompt Injection</text>
+              <text x="67" y="50" fill="#fde68a" font-size="10" text-anchor="middle">Soil, History & Rules</text>
+            </g>
+            <line x1="615" y1="60" x2="640" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(640, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#db2777"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">5. LLM Synthesis</text>
+              <text x="67" y="50" fill="#fbcfe8" font-size="10" text-anchor="middle">Google Gemini API</text>
+            </g>
+            <line x1="775" y1="60" x2="800" y2="60" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(800, 25)">
+              <rect x="0" y="0" width="110" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="55" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">6. Streamed Reply</text>
+              <text x="55" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Clean Text/TTS</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- FLOW E: VOICE & TRANSLATION -->
+        <h3 class="sub-title">E. Voice Interaction & Regional Language Flow</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Data Flow E: Sarvam AI Multilingual Speech-to-Speech Processing</div>
+            <span class="badge badge-purple">Sarvam AI Indian Speech</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">1. Farmer Audio</text>
+              <text x="65" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">WebM/WAV Stream</text>
+            </g>
+            <line x1="140" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 25)">
+              <rect x="0" y="0" width="130" height="70" rx="8" fill="#1e293b" stroke="#a855f7"/>
+              <text x="65" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">2. Saaras STT</text>
+              <text x="65" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Speech to Text</text>
+            </g>
+            <line x1="295" y1="60" x2="320" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(320, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#059669"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">3. KrishiMitra RAG</text>
+              <text x="67" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Agronomic Reasoner</text>
+            </g>
+            <line x1="455" y1="60" x2="480" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(480, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#a855f7"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">4. Mayura Engine</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Translation to Dialect</text>
+            </g>
+            <line x1="615" y1="60" x2="640" y2="60" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(640, 25)">
+              <rect x="0" y="0" width="135" height="70" rx="8" fill="#1e293b" stroke="#a855f7"/>
+              <text x="67" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">5. Bulbul TTS</text>
+              <text x="67" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Neural Speech Synth</text>
+            </g>
+            <line x1="775" y1="60" x2="800" y2="60" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(800, 25)">
+              <rect x="0" y="0" width="110" height="70" rx="8" fill="#1e293b" stroke="#10b981"/>
+              <text x="55" y="32" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">6. Voice Output</text>
+              <text x="55" y="50" fill="#a7f3d0" font-size="10" text-anchor="middle">Spoken to Farmer</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 8: DATABASE DESIGN -->
+      <section id="sec-8" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">08</span>
+          <h2 class="section-title">Database Design (MongoDB Atlas)</h2>
+        </div>
+        <p>
+          KrishiVaani models data as flexible, schema-validated JSON documents hosted on a multi-region MongoDB Atlas replica set. The document paradigm accommodates heterogeneous farm logs, historical weather snapshots, multi-turn chat threads, and varying sensor metrics without migration locking.
+        </p>
+
+        <!-- CONCEPTUAL ER DIAGRAM -->
+        <h3 class="sub-title">Conceptual Entity-Relationship Diagram</h3>
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Conceptual Document Relationships (1:1 and 1:N References)</div>
+            <span class="badge badge-amber">MongoDB Document Graph</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- User Box -->
+            <rect x="50" y="40" width="180" height="100" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+            <text x="140" y="65" fill="#10b981" font-size="13" font-weight="700" text-anchor="middle">users</text>
+            <text x="65" y="85" fill="#fff" font-size="10">• _id (ObjectId)</text>
+            <text x="65" y="102" fill="#94a3b8" font-size="10">• phone_number (Unique)</text>
+            <text x="65" y="119" fill="#94a3b8" font-size="10">• role (farmer / agronomist)</text>
+
+            <!-- Line User -> FarmerProfile -->
+            <line x1="230" y1="90" x2="310" y2="90" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+            <text x="270" y="82" fill="#10b981" font-size="10" font-weight="600" text-anchor="middle">1 : 1</text>
+
+            <!-- FarmerProfile Box -->
+            <rect x="310" y="40" width="200" height="120" rx="8" fill="#1e293b" stroke="#0284c7" stroke-width="2"/>
+            <text x="410" y="65" fill="#38bdf8" font-size="13" font-weight="700" text-anchor="middle">farmerProfiles</text>
+            <text x="325" y="85" fill="#fff" font-size="10">• _id (ObjectId)</text>
+            <text x="325" y="102" fill="#94a3b8" font-size="10">• user_id (Ref: users)</text>
+            <text x="325" y="119" fill="#94a3b8" font-size="10">• state, district, village</text>
+            <text x="325" y="136" fill="#94a3b8" font-size="10">• soil_type, land_acres</text>
+
+            <!-- Line FarmerProfile -> CropRecommendations -->
+            <path d="M 510 70 L 610 70" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="560" y="62" fill="#94a3b8" font-size="10" text-anchor="middle">1 : N</text>
+
+            <!-- CropRecommendations Box -->
+            <rect x="610" y="20" width="260" height="95" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="740" y="42" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">cropRecommendations</text>
+            <text x="625" y="60" fill="#94a3b8" font-size="10">• user_id, soil_npk, ph, rainfall</text>
+            <text x="625" y="78" fill="#94a3b8" font-size="10">• recommended_crops [{crop, conf}]</text>
+            <text x="625" y="96" fill="#94a3b8" font-size="10">• created_at (Indexed TTL/Query)</text>
+
+            <!-- Line FarmerProfile -> YieldPredictions -->
+            <path d="M 510 120 L 560 120 L 560 160 L 610 160" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            <text x="575" y="152" fill="#94a3b8" font-size="10">1 : N</text>
+
+            <!-- YieldPredictions Box -->
+            <rect x="610" y="130" width="260" height="85" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="740" y="152" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">yieldPredictions</text>
+            <text x="625" y="170" fill="#94a3b8" font-size="10">• user_id, crop, season, acres</text>
+            <text x="625" y="188" fill="#94a3b8" font-size="10">• predicted_quintals, est_revenue</text>
+
+            <!-- Line User -> conversations -->
+            <path d="M 140 140 L 140 210" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="155" y="180" fill="#94a3b8" font-size="10">1 : N</text>
+
+            <!-- Conversations Box -->
+            <rect x="50" y="210" width="200" height="80" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="150" y="232" fill="#a855f7" font-size="12" font-weight="700" text-anchor="middle">conversations</text>
+            <text x="65" y="250" fill="#94a3b8" font-size="10">• session_id (Unique)</text>
+            <text x="65" y="268" fill="#94a3b8" font-size="10">• user_id, language, status</text>
+
+            <!-- Line Conversations -> Messages -->
+            <line x1="250" y1="250" x2="330" y2="250" stroke="#a855f7" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="290" y="242" fill="#a855f7" font-size="10" text-anchor="middle">1 : N</text>
+
+            <!-- Messages Box -->
+            <rect x="330" y="210" width="220" height="80" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="440" y="232" fill="#a855f7" font-size="12" font-weight="700" text-anchor="middle">messages</text>
+            <text x="345" y="250" fill="#94a3b8" font-size="10">• conversation_id (Ref)</text>
+            <text x="345" y="268" fill="#94a3b8" font-size="10">• role ('user' | 'model'), text, audio</text>
+
+            <!-- DiseasePredictions Box -->
+            <rect x="610" y="225" width="260" height="70" rx="8" fill="#1e293b" stroke="#334155"/>
+            <text x="740" y="245" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">diseasePredictions</text>
+            <text x="625" y="263" fill="#94a3b8" font-size="10">• user_id, image_url, disease_label</text>
+            <text x="625" y="280" fill="#94a3b8" font-size="10">• confidence, treatment_advice</text>
+          </svg>
+        </div>
+
+        <h3 class="sub-title">Detailed Collection Schemas & Indexing Strategy</h3>
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Collection</th><th>Core Fields</th><th>Relationships</th><th>Indexing Strategy</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>users</code></td>
+                <td><code>_id, phone_number, password_hash, full_name, role, is_verified, created_at</code></td>
+                <td>Root account record</td>
+                <td><code>{ phone_number: 1 } (Unique)</code></td>
+              </tr>
+              <tr>
+                <td><code>farmerProfiles</code></td>
+                <td><code>_id, user_id, state, district, village, soil_type, land_area_acres, preferred_language, created_at</code></td>
+                <td>1:1 reference to <code>users._id</code></td>
+                <td><code>{ user_id: 1 } (Unique), { state: 1, district: 1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>cropRecommendations</code></td>
+                <td><code>_id, user_id, nitrogen, phosphorus, potassium, ph, rainfall, temperature, humidity, recommendations: [{crop, confidence, rationale}], created_at</code></td>
+                <td>N:1 reference to <code>users._id</code></td>
+                <td><code>{ user_id: 1, created_at: -1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>yieldPredictions</code></td>
+                <td><code>_id, user_id, crop, state, season, area_acres, predicted_yield_per_acre, total_production_quintals, estimated_revenue_inr, created_at</code></td>
+                <td>N:1 reference to <code>users._id</code></td>
+                <td><code>{ user_id: 1, created_at: -1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>diseasePredictions</code></td>
+                <td><code>_id, user_id, image_url, detected_disease, confidence_score, symptoms, organic_treatment, chemical_treatment, created_at</code></td>
+                <td>N:1 reference to <code>users._id</code></td>
+                <td><code>{ user_id: 1, created_at: -1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>conversations</code></td>
+                <td><code>_id, session_id, user_id, language, title, is_active, created_at, updated_at</code></td>
+                <td>N:1 reference to <code>users._id</code></td>
+                <td><code>{ session_id: 1 } (Unique), { user_id: 1, updated_at: -1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>messages</code></td>
+                <td><code>_id, session_id, role, content, audio_url, metadata: { rag_sources, tool_calls }, created_at</code></td>
+                <td>N:1 reference to <code>conversations.session_id</code></td>
+                <td><code>{ session_id: 1, created_at: 1 }</code></td>
+              </tr>
+              <tr>
+                <td><code>weatherData</code></td>
+                <td><code>_id, district, state, temp_c, humidity_pct, rainfall_prob_pct, advisory_flags: [String], cached_at, expires_at</code></td>
+                <td>Autonomous meteorological cache</td>
+                <td><code>{ district: 1, state: 1 }, { expires_at: 1 } (TTL Index)</code></td>
+              </tr>
+              <tr>
+                <td><code>productionEstimates</code></td>
+                <td><code>_id, user_id, crop, area_acres, costs: { seed, fertilizer, labor, irrigation, pesticide, misc }, total_cost_inr, expected_revenue_inr, net_profit_inr, created_at</code></td>
+                <td>N:1 reference to <code>users._id</code></td>
+                <td><code>{ user_id: 1, created_at: -1 }</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 9: REST API DESIGN -->
+      <section id="sec-9" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">09</span>
+          <h2 class="section-title">REST API Design</h2>
+        </div>
+        <p>
+          All client-to-gateway communication adheres to RESTful conventions over HTTPS, exchanging serialized JSON payloads with standardized HTTP status codes and unified error objects:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Method</th>
+                <th style="width: 25%;">Endpoint</th>
+                <th style="width: 33%;">Purpose & Contract Summary</th>
+                <th style="width: 14%;">Auth Required</th>
+                <th style="width: 18%;">Status Codes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/auth/register</code></td>
+                <td>Registers a new farmer account using unique phone number and credentials. Returns farmer ID and auth token.</td>
+                <td>Public</td>
+                <td><code>201 Created, 409 Conflict</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/auth/login</code></td>
+                <td>Authenticates credentials, returning signed JWT bearer token and user role.</td>
+                <td>Public</td>
+                <td><code>200 OK, 401 Unauthorized</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-blue">GET</span></td>
+                <td><code>/api/users/profile</code></td>
+                <td>Retrieves farmer profile metadata, village coordinates, land acreage, and soil profile history.</td>
+                <td>Bearer Token</td>
+                <td><code>200 OK, 404 Not Found</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/crops/recommend</code></td>
+                <td>Submits soil NPK, pH, rainfall, and temp; forwards to FastAPI ML service to return top-3 crop recommendations.</td>
+                <td>Optional</td>
+                <td><code>200 OK, 422 Invalid Input</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/crops/yield-predict</code></td>
+                <td>Submits crop, state, season, acreage, and fertilizer data; returns expected quintals/acre and MSP revenue.</td>
+                <td>Optional</td>
+                <td><code>200 OK, 500 Model Error</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/disease/predict</code></td>
+                <td>Accepts multipart/form-data leaf image. Uploads to Cloudinary, runs CNN inference, returns disease & treatment.</td>
+                <td>Optional</td>
+                <td><code>200 OK, 400 Bad Image</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/chat</code></td>
+                <td>Dispatches natural language query to KrishiMitra RAG pipeline with session history; returns advice.</td>
+                <td>Session / JWT</td>
+                <td><code>200 OK, 503 LLM Glitch</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-blue">GET</span></td>
+                <td><code>/api/chat/history</code></td>
+                <td>Fetches chronological chat exchanges for active session_id or farmer account.</td>
+                <td>Session / JWT</td>
+                <td><code>200 OK</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-blue">GET</span></td>
+                <td><code>/api/weather</code></td>
+                <td>Retrieves live weather telemetry and 5-day agro-meteorological advisories for district.</td>
+                <td>Public</td>
+                <td><code>200 OK, 504 Timeout</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/production/estimate</code></td>
+                <td>Calculates total operational cost of cultivation against expected yield and MSP market benchmark.</td>
+                <td>Optional</td>
+                <td><code>200 OK</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/voice/transcribe</code></td>
+                <td>Streams farmer audio to Sarvam Saaras STT; returns transcribed Indian-language text.</td>
+                <td>Optional</td>
+                <td><code>200 OK, 415 Audio Error</code></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-green">POST</span></td>
+                <td><code>/api/voice/synthesize</code></td>
+                <td>Converts text advisory to regional voice using Sarvam Bulbul TTS; returns audio base64.</td>
+                <td>Optional</td>
+                <td><code>200 OK</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 10: AUTHENTICATION & AUTHORIZATION -->
+      <section id="sec-10" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">10</span>
+          <h2 class="section-title">Authentication & Authorization</h2>
+        </div>
+        <p>
+          KrishiVaani adopts a stateless, token-based authentication mechanism designed to scale horizontally across serverless and containerized instances:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Password Hashing & Salting</div>
+            <p style="font-size:0.88rem;">Farmer passwords are salted and hashed using <strong>bcrypt</strong> with an adaptive work factor (12 rounds), guarding against offline rainbow table and dictionary attacks.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">JSON Web Tokens (JWT)</div>
+            <p style="font-size:0.88rem;">Issued upon successful verification with an HMAC-SHA256 signature using a rotating secret key. Tokens carry non-sensitive claims (<code>user_id</code>, <code>role</code>) with an 8-hour expiry.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Role-Based Access Control (RBAC)</div>
+            <p style="font-size:0.88rem;">Enforces route-level authorization guards distinguishing standard <code>farmer</code> users from <code>agronomist</code> and <code>admin</code> roles who hold permissions to update RAG vector stores.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Stateless Request Guards</div>
+            <p style="font-size:0.88rem;">Protected endpoints utilize Express middleware extracting the <code>Authorization: Bearer &lt;token&gt;</code> header. Expired or forged tokens trigger immediate 401 Unauthorized responses.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 11: SECURITY ARCHITECTURE -->
+      <section id="sec-11" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">11</span>
+          <h2 class="section-title">Security Architecture</h2>
+        </div>
+        <p>
+          The security perimeter implements comprehensive defense-in-depth principles across transport, network, application, and AI model layers:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Vector / Threat</th><th>Mitigation Strategy</th><th>Implementation Mechanism</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Transport Eavesdropping</strong></td>
+                <td>Mandatory TLS 1.3 encryption on all public and inter-service channels. HSTS enabled.</td>
+                <td>Cloudflare / Vercel Edge SSL + Reverse Proxy SSL Termination</td>
+              </tr>
+              <tr>
+                <td><strong>DDoS & Brute Force</strong></td>
+                <td>Rate limiting per IP address and authenticated user to prevent credential stuffing.</td>
+                <td><code>express-rate-limit</code>: 100 req/min for APIs, 10 req/min for auth</td>
+              </tr>
+              <tr>
+                <td><strong>Injection Attacks</strong></td>
+                <td>Strict schema validation rejecting unexpected or unescaped parameters.</td>
+                <td>Zod / Joi validation middleware on Node.js; Pydantic models on FastAPI</td>
+              </tr>
+              <tr>
+                <td><strong>Cross-Origin Abuse</strong></td>
+                <td>Strict CORS whitelist restricting API access solely to verified KrishiVaani domains.</td>
+                <td><code>cors</code> middleware configured with explicit origin array</td>
+              </tr>
+              <tr>
+                <td><strong>Malicious File Uploads</strong></td>
+                <td>MIME-type binary signature inspection (magic bytes), 5MB file cap, and storage offloading.</td>
+                <td>Multer file filter + Cloudinary automatic image sanitizer</td>
+              </tr>
+              <tr>
+                <td><strong>Prompt Injection (LLM)</strong></td>
+                <td>System instruction isolation, strict delimiters around retrieved context, input sanitization.</td>
+                <td>Role delimitation in Google GenAI SDK; strict KrishiMitra guardrails</td>
+              </tr>
+              <tr>
+                <td><strong>Database Exploit</strong></td>
+                <td>No direct shell execution; Mongoose schema sanitization; Atlas IP access whitelist.</td>
+                <td>Mongoose ODM query parameterization + MongoDB Atlas VPC peering</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 12: ML ARCHITECTURE -->
+      <section id="sec-12" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">12</span>
+          <h2 class="section-title">Machine Learning Architecture</h2>
+        </div>
+        <p>
+          KrishiVaani's predictive intelligence leverages two supervised tabular engines and a deep convolutional neural network, hosted within the Python FastAPI microservice:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">1. Crop Recommendation Engine</div>
+            <p style="font-size:0.88rem;"><strong>Algorithm:</strong> Optimized XGBoost / Random Forest Classifier trained on 2,200+ multi-regional agricultural data points (NPK, pH, temperature, humidity, rainfall).<br>
+            <strong>Performance:</strong> 94.2% test accuracy across 22 Indian crop varieties (Rice, Maize, Jute, Cotton, Chickpea, etc.). Serialized via <code>joblib</code>.<br>
+            <strong>Inference:</strong> Evaluates incoming soil metrics against calibrated decision boundaries and outputs top 3 crop probabilities with agronomic soil notes.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">2. Crop Yield Forecasting Engine</div>
+            <p style="font-size:0.88rem;"><strong>Algorithm:</strong> Multi-variate Ridge & Gradient Boosted Regressor trained on 10+ years of district-level ICAR harvest records.<br>
+            <strong>Input Features:</strong> Crop name, State, Agricultural season, Cultivated area (acres), precipitation, and regional soil NPK profile.<br>
+            <strong>Evaluation:</strong> R² = 0.88, Mean Absolute Error (MAE) under 1.8 quintals/acre. Outputs total expected harvest and projected revenue based on current MSP.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">3. Plant Pathology CNN Classifier</div>
+            <p style="font-size:0.88rem;"><strong>Algorithm:</strong> Transfer learning on MobileNetV2 / ResNet-50 pre-trained on ImageNet and fine-tuned on 54,000+ PlantVillage and indigenous crop pathology images.<br>
+            <strong>Preprocessing:</strong> Resize to 224x224 RGB, random horizontal flip, and tensor normalization ([0.485, 0.456, 0.406]).<br>
+            <strong>Inference:</strong> Softmax output layer classifies 15+ crop disease classes with confidence thresholding (&gt;75% required for automated diagnosis).</p>
+          </div>
+        </div>
+
+        <h3 class="sub-title">Model Serving & Lifecycle Architecture</h3>
+        <p>
+          Models reside in a version-controlled model registry (<code>/models/v2/...</code>). At startup, FastAPI loads model artifacts into memory, executes a zero-tensor warmup pass, and exposes thread-safe asynchronous inference methods to handle high concurrent load with sub-second response times.
+        </p>
+      </section>
+
+      <!-- SECTION 13: RAG ARCHITECTURE -->
+      <section id="sec-13" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">13</span>
+          <h2 class="section-title">Retrieval-Augmented Generation (RAG) Architecture</h2>
+        </div>
+        <p>
+          The KrishiMitra conversational assistant employs an advanced RAG pipeline to ground LLM responses in peer-reviewed agronomic literature from the Indian Council of Agricultural Research (ICAR) and Krishi Vigyan Kendras (KVK).
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">1. Ingestion & Document Chunking</div>
+            <p style="font-size:0.88rem;">Agronomic handbooks, disease management compendiums, and fertilizer schedules are cleaned and split into semantic chunks of <strong>500 tokens with 50-token overlap</strong> using recursive character text splitting to maintain contextual continuity across paragraph breaks.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">2. Dense Vector Embeddings</div>
+            <p style="font-size:0.88rem;">Text chunks are transformed into dense vector representations using text embedding models (768/1536 dimensions). Vectors capture nuanced agricultural semantics such as symptoms, fungal pathogens, and regional crop seasons.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">3. FAISS Vector Indexing</div>
+            <p style="font-size:0.88rem;">Vectors are indexed in a high-speed in-memory <strong>FAISS (Facebook AI Similarity Search)</strong> index using Inner Product (Cosine Similarity) metrics. Performs sub-millisecond nearest-neighbor search across thousands of agronomic passages.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">4. Top-K Semantic Retrieval</div>
+            <p style="font-size:0.88rem;">Incoming user queries are vectorized and compared against the FAISS index to retrieve the top 3 most relevant document citations, filtered by regional relevance and crop classification.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">5. Grounded Prompt Construction</div>
+            <p style="font-size:0.88rem;">Retrieved excerpts are injected into the system prompt alongside the farmer's registered profile (soil type, district, land size) and live weather telemetry, strictly bounded by system delimiters.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">6. Hallucination Mitigation & Guardrails</div>
+            <p style="font-size:0.88rem;">The LLM is governed by strict rules: if retrieved context does not cover the question, it explicitly states uncertainty; it never invents pesticide dosages; and it strictly refuses off-topic non-agricultural queries.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 14: EXTERNAL API INTEGRATION -->
+      <section id="sec-14" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">14</span>
+          <h2 class="section-title">External API Integration</h2>
+        </div>
+        <p>
+          KrishiVaani delegates specialized capabilities to industry-leading external APIs, employing circuit breakers and timeouts to guarantee resilience:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Provider</th><th>Purpose & Service Exchanged</th><th>Failure Mode & Fallback Strategy</th><th>Rate Limits & Auth</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>OpenWeatherMap API</strong></td>
+                <td>Retrieves current temperature, humidity, rainfall probability, and 5-day forecasts via GPS or district name.</td>
+                <td>Returns cached meteorological readings from MongoDB (12-hour TTL) if API is unreachable.</td>
+                <td>API Key via header; 60 calls/min free tier threshold</td>
+              </tr>
+              <tr>
+                <td><strong>Sarvam AI</strong></td>
+                <td>Regional Indian language processing: Saaras (Speech-to-Text), Mayura (Translation), and Bulbul (TTS) in Hindi, Odia, Marathi.</td>
+                <td>Falls back to browser-native Web Speech Synthesis API and direct English LLM generation if Sarvam times out.</td>
+                <td>Bearer Token; Exponential backoff with 1 retry on 429/503</td>
+              </tr>
+              <tr>
+                <td><strong>Google Gemini API</strong></td>
+                <td>High-speed multi-modal LLM powering KrishiMitra's conversational reasoning and agricultural synthesis.</td>
+                <td>Automatic model failover: defaults to <code>gemini-2.5-flash</code>; switches to <code>gemini-3.5-flash-lite</code> or fallback key on quota exhaustion.</td>
+                <td>API Key in environment; Multi-key pool rotation enabled</td>
+              </tr>
+              <tr>
+                <td><strong>Cloudinary CDN</strong></td>
+                <td>Cloud media storage and CDN delivery for uploaded plant leaf photographs and generated diagnosis cards.</td>
+                <td>Temporary in-memory buffer storage in Express if Cloudinary upload fails, allowing inference to proceed.</td>
+                <td>API Key & Secret; Signed upload requests</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 15: DEPLOYMENT ARCHITECTURE -->
+      <section id="sec-15" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">15</span>
+          <h2 class="section-title">Deployment Architecture</h2>
+        </div>
+        <p>
+          The production infrastructure leverages modern cloud platform-as-a-service (PaaS) and edge distribution networks to ensure cost-efficiency, automated zero-downtime deployments, and global low-latency access:
+        </p>
+
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Production Cloud Deployment Topology</div>
+            <span class="badge badge-blue">Distributed PaaS Infrastructure</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Farmer / User Box -->
+            <rect x="360" y="20" width="200" height="50" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+            <text x="460" y="45" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">Farmer Web & Mobile Client</text>
+            <text x="460" y="60" fill="#bae6fd" font-size="10" text-anchor="middle">Edge Browser / Smartphone</text>
+
+            <line x1="460" y1="70" x2="460" y2="105" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- Vercel Edge -->
+            <rect x="260" y="105" width="400" height="60" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+            <text x="460" y="132" fill="#10b981" font-size="14" font-weight="700" text-anchor="middle">Vercel Edge Global CDN</text>
+            <text x="460" y="150" fill="#a7f3d0" font-size="11" text-anchor="middle">Static React SPA · Asset Compression · Brotli Caching</text>
+
+            <line x1="460" y1="165" x2="460" y2="200" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+            <text x="475" y="186" fill="#10b981" font-size="10" font-weight="600">HTTPS API Calls</text>
+
+            <!-- Render/Railway API Gateway -->
+            <rect x="180" y="200" width="560" height="70" rx="10" fill="#1e293b" stroke="#059669" stroke-width="2"/>
+            <text x="460" y="228" fill="#ffffff" font-size="14" font-weight="700" text-anchor="middle">Node.js Express API Gateway (Render / Railway)</text>
+            <text x="460" y="248" fill="#cbd5e1" font-size="11" text-anchor="middle">Autoscaled Container Instances · Health Check Monitor · Secrets Isolation</text>
+
+            <!-- Connectors from Gateway -->
+            <path d="M 280 270 L 280 300 L 150 300 L 150 320" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            <line x1="460" y1="270" x2="460" y2="320" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 640 270 L 640 300 L 770 300 L 770 320" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+            <!-- MongoDB Atlas Box -->
+            <rect x="40" y="320" width="220" height="50" rx="8" fill="#1e293b" stroke="#d97706" stroke-width="1.5"/>
+            <text x="150" y="342" fill="#fde68a" font-size="12" font-weight="700" text-anchor="middle">MongoDB Atlas Cluster</text>
+            <text x="150" y="358" fill="#94a3b8" font-size="10" text-anchor="middle">AWS ap-south-1 (Mumbai)</text>
+
+            <!-- FastAPI ML Box -->
+            <rect x="350" y="320" width="220" height="50" rx="8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="460" y="342" fill="#ddd6fe" font-size="12" font-weight="700" text-anchor="middle">Python FastAPI Service</text>
+            <text x="460" y="358" fill="#94a3b8" font-size="10" text-anchor="middle">Docker Containerized (Render)</text>
+
+            <!-- Cloud APIs Box -->
+            <rect x="660" y="320" width="220" height="50" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+            <text x="770" y="342" fill="#cbd5e1" font-size="12" font-weight="700" text-anchor="middle">SaaS Cloud APIs</text>
+            <text x="770" y="358" fill="#94a3b8" font-size="10" text-anchor="middle">Sarvam, Gemini, Cloudinary</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 16: SCALABILITY -->
+      <section id="sec-16" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">16</span>
+          <h2 class="section-title">Scalability Framework</h2>
+        </div>
+        <p>
+          The platform scales seamlessly to handle regional spikes during peak planting and monsoon advisories:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Stateless Gateway Architecture</div>
+            <p style="font-size:0.88rem;">The Node.js and FastAPI services maintain no local session state. User sessions are verified via self-contained cryptographically signed JWTs, allowing instances to scale horizontally behind round-robin load balancers.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Decoupled Heavy Compute</div>
+            <p style="font-size:0.88rem;">Machine Learning and Computer Vision inference are decoupled from the Node.js API Gateway. Heavy PyTorch tensor calculations execute on isolated Python worker containers, preventing event-loop blocking on the main server.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Multi-Layer Caching</div>
+            <p style="font-size:0.88rem;">District-level meteorological forecasts and Mandi commodity benchmarks are cached in memory and MongoDB TTL collections with a 6-to-12-hour expiration, eliminating 80% of redundant third-party API calls.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Vector Index Optimization</div>
+            <p style="font-size:0.88rem;">The FAISS vector index operates fully in RAM with quantized index options (IVF-Flat), enabling sub-50ms nearest-neighbor lookups across 100,000+ agronomic document embeddings with minimal RAM overhead.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 17: RELIABILITY & FAILURE HANDLING -->
+      <section id="sec-17" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">17</span>
+          <h2 class="section-title">Reliability & Failure Handling</h2>
+        </div>
+        <p>
+          KrishiVaani implements comprehensive fault-isolation and fallback policies to guarantee continuity of service under network disruptions or third-party API outages:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Component / Dependency</th><th>Failure Condition</th><th>System Behavior & Degradation Strategy</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Weather API (OpenWeather)</strong></td>
+                <td>Outage, HTTP 504 Gateway Timeout, Rate Limit (429)</td>
+                <td>Returns cached meteorological readings from MongoDB (12-hr TTL). If empty, serves historical district seasonal averages with a disclaimer badge.</td>
+              </tr>
+              <tr>
+                <td><strong>LLM API (Gemini)</strong></td>
+                <td>Quota exceeded (429), high demand (503), timeout</td>
+                <td>Primary key fails over to secondary key (<code>GEMINI_API_KEY2</code>); model falls back from <code>gemini-2.5-flash</code> to <code>gemini-3.5-flash-lite</code>. If completely unreachable, displays a clear service error with retry options—never fake answers.</td>
+              </tr>
+              <tr>
+                <td><strong>Sarvam AI Voice Services</strong></td>
+                <td>Transcription/TTS latency or service unavailability</td>
+                <td>Gracefully falls back to browser-native Web Speech API for voice synthesis; client displays clean text response without blocking UI.</td>
+              </tr>
+              <tr>
+                <td><strong>ML Inference Service (FastAPI)</strong></td>
+                <td>Service container restart, memory exhaustion</td>
+                <td>Express Gateway catches 500 error; falls back to offline rule-based agronomy heuristics (ICAR baseline tables) with low-confidence notification.</td>
+              </tr>
+              <tr>
+                <td><strong>MongoDB Atlas Cluster</strong></td>
+                <td>Network partition or primary replica failover</td>
+                <td>Automatic replica set election within 3-5s. Temporary in-memory session cache maintains active farmer chat threads during brief reconnection windows.</td>
+              </tr>
+              <tr>
+                <td><strong>Cloudinary Storage Outage</strong></td>
+                <td>Image upload fails or network times out</td>
+                <td>Express buffers leaf image directly in RAM memory and streams base64 payload to FastAPI vision endpoint, enabling immediate disease detection.</td>
+              </tr>
+              <tr>
+                <td><strong>Corrupted Leaf Image</strong></td>
+                <td>Farmer uploads blurry, dark, or non-leaf image</td>
+                <td>Client-side aspect ratio and size check. PyTorch model softmax entropy check flags low confidence (&lt;50%), prompting farmer to retake image with clear lighting.</td>
+              </tr>
+              <tr>
+                <td><strong>RAG Semantic Retrieval</strong></td>
+                <td>FAISS returns low similarity scores (&lt;0.4 cosine)</td>
+                <td>System notifies the LLM of missing context; LLM provides general agronomy guidance and asks ONE clarifying question instead of guessing.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 18: MONITORING & OBSERVABILITY -->
+      <section id="sec-18" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">18</span>
+          <h2 class="section-title">Monitoring & Observability</h2>
+        </div>
+        <p>
+          Full-stack telemetry and proactive alerting maintain high operational visibility across distributed services:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">Structured JSON Logging</div>
+            <p style="font-size:0.88rem;">Node.js and FastAPI log structured JSON events via Winston and Python standard logging. Every request receives a unique <code>x-correlation-id</code> propagating across gateway and ML microservices.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">APM & Latency Tracking</div>
+            <p style="font-size:0.88rem;">Tracks p50, p95, and p99 latency metrics across API Gateway routes. Alerts trigger automatically if ML inference exceeds 1.5 seconds or LLM token streaming stalls.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Real-Time Error Alerting (Sentry)</div>
+            <p style="font-size:0.88rem;">Sentry captures unhandled backend exceptions, frontend runtime errors, and third-party API rejection rates, deduplicating crash reports with full stack traces.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">ML Model Drift & Health</div>
+            <p style="font-size:0.88rem;">Logs prediction distribution vectors and confidence percentiles. Discrepancies in disease classification confidence or unusual crop output skews trigger agronomic data audits.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 19: CI/CD ARCHITECTURE -->
+      <section id="sec-19" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">19</span>
+          <h2 class="section-title">CI/CD Pipeline Architecture</h2>
+        </div>
+        <p>
+          Automated continuous integration and deployment ensure rapid, regression-tested delivery across microservice repositories:
+        </p>
+
+        <div class="diagram-card">
+          <div class="diagram-header">
+            <div class="diagram-title">Automated Multi-Stage CI/CD Deployment Flow</div>
+            <span class="badge badge-green">GitHub Actions CI/CD</span>
+          </div>
+          <svg class="diagram-svg" viewBox="0 0 920 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(10, 45)">
+              <rect x="0" y="0" width="130" height="80" rx="8" fill="#1e293b" stroke="#334155"/>
+              <text x="65" y="35" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">1. GitHub Push</text>
+              <text x="65" y="55" fill="#94a3b8" font-size="10" text-anchor="middle">Feature Branch / PR</text>
+            </g>
+            <line x1="140" y1="85" x2="165" y2="85" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(165, 45)">
+              <rect x="0" y="0" width="140" height="80" rx="8" fill="#1e293b" stroke="#0284c7"/>
+              <text x="70" y="32" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">2. Automated CI</text>
+              <text x="70" y="50" fill="#bae6fd" font-size="10" text-anchor="middle">Lint (ESLint / Flake8)</text>
+              <text x="70" y="65" fill="#bae6fd" font-size="10" text-anchor="middle">Unit Tests (Pytest / Jest)</text>
+            </g>
+            <line x1="305" y1="85" x2="330" y2="85" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(330, 45)">
+              <rect x="0" y="0" width="140" height="80" rx="8" fill="#1e293b" stroke="#7c3aed"/>
+              <text x="70" y="32" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">3. Artifact Build</text>
+              <text x="70" y="50" fill="#ddd6fe" font-size="10" text-anchor="middle">Vite SPA Bundle</text>
+              <text x="70" y="65" fill="#ddd6fe" font-size="10" text-anchor="middle">Docker Container Image</text>
+            </g>
+            <line x1="470" y1="85" x2="495" y2="85" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <g transform="translate(495, 45)">
+              <rect x="0" y="0" width="135" height="80" rx="8" fill="#1e293b" stroke="#d97706"/>
+              <text x="67" y="32" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">4. Smoke Tests</text>
+              <text x="67" y="50" fill="#fde68a" font-size="10" text-anchor="middle">Model Weight Check</text>
+              <text x="67" y="65" fill="#fde68a" font-size="10" text-anchor="middle">API Health Probes</text>
+            </g>
+            <line x1="630" y1="85" x2="655" y2="85" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+            <g transform="translate(655, 30)">
+              <rect x="0" y="0" width="250" height="110" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+              <text x="125" y="28" fill="#10b981" font-size="13" font-weight="700" text-anchor="middle">5. Automated CD Deploy</text>
+              <text x="20" y="52" fill="#fff" font-size="11">• Frontend → Vercel Edge CDN</text>
+              <text x="20" y="72" fill="#fff" font-size="11">• Node.js Gateway → Render</text>
+              <text x="20" y="92" fill="#fff" font-size="11">• FastAPI Service → Railway / Docker</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 20: FUTURE ENHANCEMENTS -->
+      <section id="sec-20" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">20</span>
+          <h2 class="section-title">Future Enhancements</h2>
+        </div>
+        <p>
+          The platform roadmap targets next-generation agronomic capabilities to expand depth, accuracy, and rural reach:
+        </p>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-title">1. Satellite & GIS Crop Health (NDVI)</div>
+            <p style="font-size:0.88rem;">Integration with European Space Agency Sentinel-2 satellite telemetry to compute Normalized Difference Vegetation Index (NDVI) and moisture curves across farmer plot boundaries.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">2. IoT Soil & Microclimate Probes</div>
+            <p style="font-size:0.88rem;">Direct ingestion from low-cost LoRaWAN soil telemetry sensors (real-time NPK, moisture, pH, electrical conductivity) for automated closed-loop drip irrigation.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">3. Mandi Market Price Forecasting</div>
+            <p style="font-size:0.88rem;">Time-series forecasting (Prophet/LSTM) of wholesale commodity prices using Agmarknet datasets, recommending optimal selling weeks to maximize profits.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">4. Offline-First PWA & Edge Inference</div>
+            <p style="font-size:0.88rem;">TensorFlow Lite model execution in mobile browsers via WebAssembly, allowing offline plant disease scanning in remote fields with zero cell connectivity.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">5. Farmer Peer Network & KVK Escalation</div>
+            <p style="font-size:0.88rem;">Direct digital escalation of unclassified crop diseases to local Krishi Vigyan Kendra (KVK) agricultural extension officers with geolocation tags.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">6. Expanded Dialect Speech Models</div>
+            <p style="font-size:0.88rem;">Expansion to 12+ Indian regional dialects (Bhojpuri, Maithili, Gujarati, Kannada, Tamil, Punjabi) with custom acoustic models trained on agricultural vernacular.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 21: TECHNOLOGY STACK SUMMARY -->
+      <section id="sec-21" class="hld-section">
+        <div class="section-header">
+          <span class="section-num">21</span>
+          <h2 class="section-title">Technology Stack Summary</h2>
+        </div>
+        <p>
+          Complete reference overview of languages, frameworks, runtime environments, and cloud providers comprising the KrishiVaani production architecture:
+        </p>
+
+        <div class="table-container">
+          <table class="doc-table">
+            <thead>
+              <tr><th>Architectural Tier</th><th>Technology / Framework</th><th>Version / Package</th><th>Role & Architectural Rationale</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Presentation (Frontend)</strong></td>
+                <td>React.js + Vite</td>
+                <td>React v19, Vite v8</td>
+                <td>High-performance component architecture, rapid HMR, and ultra-lean production bundle size.</td>
+              </tr>
+              <tr>
+                <td><strong>Styling & Design</strong></td>
+                <td>Tailwind CSS</td>
+                <td>v3.4+ / Utility CSS</td>
+                <td>Responsive layout, accessible contrast, mobile-first design system without bulky CSS frameworks.</td>
+              </tr>
+              <tr>
+                <td><strong>API Gateway (Backend)</strong></td>
+                <td>Node.js + Express.js</td>
+                <td>Node v20 LTS, Express v4.x</td>
+                <td>Non-blocking I/O orchestration, token authentication, rate limiting, and third-party API proxying.</td>
+              </tr>
+              <tr>
+                <td><strong>Primary Database</strong></td>
+                <td>MongoDB Atlas</td>
+                <td>MongoDB v7.0+</td>
+                <td>Distributed document database handling flexible schemas for soil logs, user profiles, and chat threads.</td>
+              </tr>
+              <tr>
+                <td><strong>ML Microservice</strong></td>
+                <td>Python + FastAPI</td>
+                <td>Python 3.11, FastAPI v0.100+</td>
+                <td>High-throughput asynchronous ASGI web server serving serialized predictive models.</td>
+              </tr>
+              <tr>
+                <td><strong>Machine Learning</strong></td>
+                <td>Scikit-learn + XGBoost</td>
+                <td>Scikit-learn 1.3+, XGBoost 2.0+</td>
+                <td>Tabular crop classification and multi-variate yield regression modeling.</td>
+              </tr>
+              <tr>
+                <td><strong>Deep Learning (Vision)</strong></td>
+                <td>PyTorch / Torchvision</td>
+                <td>PyTorch v2.x</td>
+                <td>Convolutional Neural Network (CNN) for leaf disease classification from uploaded photos.</td>
+              </tr>
+              <tr>
+                <td><strong>Vector Database & RAG</strong></td>
+                <td>LangChain + FAISS</td>
+                <td>FAISS-CPU v1.7+, LangChain</td>
+                <td>High-speed in-memory vector similarity index for semantic agronomy document retrieval.</td>
+              </tr>
+              <tr>
+                <td><strong>Generative LLM</strong></td>
+                <td>Google Gemini / GenAI SDK</td>
+                <td>Official <code>google-genai</code></td>
+                <td>Domain-restricted conversational synthesis with agricultural system prompt and guardrails.</td>
+              </tr>
+              <tr>
+                <td><strong>Voice & Dialect AI</strong></td>
+                <td>Sarvam AI API</td>
+                <td>Saaras (STT), Bulbul (TTS), Mayura</td>
+                <td>Indigenous Indian speech recognition, neural voice generation, and regional translation.</td>
+              </tr>
+              <tr>
+                <td><strong>Media Storage</strong></td>
+                <td>Cloudinary</td>
+                <td>Cloudinary Node.js SDK</td>
+                <td>Cloud-hosted asset transformation, compression, and global CDN delivery for leaf images.</td>
+              </tr>
+              <tr>
+                <td><strong>Meteorological Data</strong></td>
+                <td>OpenWeatherMap API</td>
+                <td>REST API v2.5</td>
+                <td>Real-time temperature, precipitation probability, humidity, and agro-meteorological advisories.</td>
+              </tr>
+              <tr>
+                <td><strong>Hosting & Edge CDN</strong></td>
+                <td>Vercel + Render / Railway</td>
+                <td>Multi-Cloud PaaS</td>
+                <td>Edge CDN for static assets; containerized runtime environments for Node.js and FastAPI services.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <strong>KrishiVaani (कृषिवाणी)</strong> — Enterprise High-Level Design Document v2.4
+        </div>
+        <div>
+          Generated for Software Engineering Project Review & Technical Assessment
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- FLOATING BACK TO TOP BUTTON -->
+  <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Back to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+
+  <!-- INTERACTIVE JAVASCRIPT LOGIC -->
+  <script>
+    // Theme Switcher
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const target = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', target);
+      localStorage.setItem('krishivaani-theme', target);
+    }
+
+    // Initialize Theme
+    const savedTheme = localStorage.getItem('krishivaani-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Section Filter in Sidebar
+    function filterSections() {
+      const q = document.getElementById('sec-search').value.toLowerCase();
+      const items = document.querySelectorAll('#toc-list .toc-item');
+      items.forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    // Scrollspy & Back to Top
+    window.addEventListener('scroll', () => {
+      const btt = document.getElementById('back-to-top');
+      if (window.scrollY > 400) {
+        btt.classList.add('visible');
+      } else {
+        btt.classList.remove('visible');
+      }
+
+      // Scrollspy
+      const sections = document.querySelectorAll('section.hld-section');
+      let currentId = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 120;
+        if (window.scrollY >= top) {
+          currentId = sec.getAttribute('id');
+        }
+      });
+
+      if (currentId) {
+        document.querySelectorAll('#toc-list .toc-item').forEach(link => {
+          if (link.getAttribute('href') === '#' + currentId) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -20,7 +20,7 @@ from backend.app.services.crop_planning.router import router as planning_router
 from backend.app.services.production_cost.router import router as cost_router
 from backend.app.services.mandi_service.router import router as mandi_router
 from backend.app.services.mandi_service.repository import mandi_repository
-from backend.app.services.chatbot_agent.router import agri_chat_router
+from backend.app.services.chatbot_agent.router import agri_chat_router, chat_message_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -79,6 +79,7 @@ app.include_router(disease_router, prefix=settings.API_V1_STR)
 app.include_router(satellite_router, prefix=settings.API_V1_STR)
 app.include_router(chat_router, prefix=settings.API_V1_STR)
 app.include_router(agri_chat_router, prefix=settings.API_V1_STR)
+app.include_router(chat_message_router, prefix=settings.API_V1_STR)
 app.include_router(voice_router, prefix=settings.API_V1_STR)
 app.include_router(fertilizer_router, prefix=settings.API_V1_STR)
 app.include_router(calendar_router, prefix=settings.API_V1_STR)

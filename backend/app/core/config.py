@@ -25,9 +25,13 @@ class Settings(BaseSettings):
     # Session secret for chat memory
     SECRET_KEY: str = "krishivaani-default-dev-secret-change-in-prod"
 
-    # LLM — at least one must be set for real AI responses
-    OPENAI_API_KEY: Optional[str] = None
-    ANTHROPIC_API_KEY: Optional[str] = None
+    # LLM — Google Gemini API
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY1: Optional[str] = None
+    GEMINI_API_KEY2: Optional[str] = None
+    GOOGLE_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_FALLBACK_MODELS: str = "gemini-3.5-flash-lite,gemini-flash-lite-latest"
 
     # Weather
     OPENWEATHERMAP_API_KEY: Optional[str] = None
