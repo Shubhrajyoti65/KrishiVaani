@@ -188,7 +188,10 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('API error');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Server error (${res.status})`);
+      }
       const data = await res.json();
       if (data.session_id) {
         setSessionId(data.session_id);
@@ -196,24 +199,14 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
       const replyText = data.reply || data.response;
       const newBotMsg = { id: Date.now() + 1, role: 'assistant', text: replyText, ts: new Date() };
       setMessages(prev => [...prev, newBotMsg]);
-    } catch {
-      // Fallback responses
-      const lower = text.toLowerCase();
-      let reply =
-        lower.includes('crop') || lower.includes('plant') || lower.includes('फसल') ?
-          '🌾 Based on your query, I recommend testing your soil NPK before selecting crops. You can use our Crop Recommendation tool for a detailed analysis. Common high-yield crops for good soil are wheat (Rabi), rice (Kharif), and maize.' :
-        lower.includes('weather') || lower.includes('rain') || lower.includes('मौसम') ?
-          '☁️ For live weather data, please use our Weather & Alerts tab. The India Meteorological Department (IMD) predicts normal monsoon this season. Check daily for your district advisory.' :
-        lower.includes('msp') || lower.includes('price') || lower.includes('मूल्य') ?
-          '💰 Key MSP 2024-25: Wheat ₹2,275/q, Rice ₹2,183/q, Mustard ₹5,650/q, Cotton ₹6,620/q, Groundnut ₹6,377/q. Sell to FCI or APMC for guaranteed MSP.' :
-        lower.includes('ndvi') || lower.includes('satellite') ?
-          '🛰️ NDVI (Normalized Difference Vegetation Index) ranges from 0 to 1. Values above 0.6 indicate healthy crops. Use our NDVI Satellite tool to monitor your field weekly using Sentinel-2 imagery.' :
-        lower.includes('disease') || lower.includes('leaf') || lower.includes('रोग') ?
-          '🍃 Common crop diseases: Leaf Blight (use Mancozeb), Rust (use Propiconazole), Powdery Mildew (Sulfur). For organic treatment, neem oil spray at 5ml/L is very effective. Upload a leaf photo in our Disease Scanner for AI diagnosis.' :
-          '🤖 I can help with crop advice, weather info, MSP prices, disease identification, and satellite field monitoring. Try asking me: "Best crop for sandy soil in Rajasthan" or "Wheat disease symptoms".';
-
-      const newBotMsg = { id: Date.now() + 1, role: 'assistant', text: reply, ts: new Date() };
-      setMessages(prev => [...prev, newBotMsg]);
+    } catch (err) {
+      console.error('Chatbot API error:', err);
+      const isQuota = err.message && (err.message.includes('429') || err.message.toLowerCase().includes('quota'));
+      const errorText = isQuota
+        ? '⚠️ KrishiMitra is currently busy (API quota limit reached). Please try again in a few moments.'
+        : `⚠️ KrishiMitra service error: ${err.message || 'Unable to connect to assistant. Please try again.'}`;
+      const errorBotMsg = { id: Date.now() + 1, role: 'assistant', text: errorText, isError: true, ts: new Date() };
+      setMessages(prev => [...prev, errorBotMsg]);
     } finally {
       setLoading(false);
     }

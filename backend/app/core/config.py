@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "krishivaani-default-dev-secret-change-in-prod"
 
     # LLM — Google Gemini API
-    -: Optional[str] = None
+    Optional[str] = None
     GEMINI_API_KEY1: Optional[str] = None
     GEMINI_API_KEY2: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
