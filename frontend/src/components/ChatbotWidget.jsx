@@ -6,6 +6,13 @@ import {
 } from 'lucide-react';
 import { AGRI_IMAGES } from '../data/agriImages';
 import { useAuth } from '../context/AuthContext';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
 
 const LANG_GREET = {
   en: "Hello! I'm KrishiVaani AI Assistant 🌾 I can help you with crop recommendations, weather advisories, yield estimates, and disease diagnosis. How can I help you today?",
@@ -239,6 +246,47 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
         </div>
         <h2 className="segment-header-title">AI Farming Assistant</h2>
       </div>
+
+      <style>{`
+        .chat-markdown-body {
+          word-break: break-word;
+        }
+        .chat-markdown-body p {
+          margin: 0 0 0.55rem 0;
+          line-height: 1.6;
+        }
+        .chat-markdown-body p:last-child {
+          margin-bottom: 0;
+        }
+        .chat-markdown-body ul, .chat-markdown-body ol {
+          margin: 0.35rem 0 0.55rem 1.25rem;
+          padding: 0;
+        }
+        .chat-markdown-body li {
+          margin-bottom: 0.25rem;
+          line-height: 1.55;
+        }
+        .chat-markdown-body strong {
+          font-weight: 700;
+          color: inherit;
+        }
+        .chat-markdown-body em {
+          font-style: italic;
+        }
+        .chat-markdown-body h1, .chat-markdown-body h2, .chat-markdown-body h3, .chat-markdown-body h4 {
+          margin: 0.65rem 0 0.35rem 0;
+          font-weight: 700;
+          font-size: 0.98rem;
+          color: inherit;
+        }
+        .chat-markdown-body code {
+          background: rgba(0, 0, 0, 0.08);
+          padding: 0.15rem 0.35rem;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 0.88em;
+        }
+      `}</style>
 
       {!isAuthenticated ? (
         <div
@@ -604,7 +652,16 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
                       backdropFilter: 'blur(10px)',
                     }}
                   >
-                    {msg.text}
+                    {msg.role === 'user' ? (
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                    ) : (
+                      <div
+                        className="chat-markdown-body"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(marked.parse(msg.text || ''))
+                        }}
+                      />
+                    )}
                   </div>
                   <div
                     style={{

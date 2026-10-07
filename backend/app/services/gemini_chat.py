@@ -40,7 +40,7 @@ RULES:
 3. Give specific, actionable steps: what to do, how much, when, and why. Use metric units and local conventions (kg/acre or kg/hectare, seasons like Kharif/Rabi/Zaid). Mention approximate costs or timings only when you are reasonably sure.
 4. For disease or pest questions: state the likely cause, symptoms to confirm, immediate treatment (organic and chemical options), prevention, and when to consult a local agriculture officer or Krishi Vigyan Kendra. Never give unsafe pesticide advice; always mention safety precautions and recommended dosages from the label or an expert.
 5. If retrieved knowledge-base context is provided, base your answer on it and say so briefly. If the context does not cover the question, use your general agricultural knowledge but say you are less certain. Never invent facts, statistics, product names, or scheme details. If you do not know, say so.
-6. Reply in the same language the farmer uses, in simple words. Keep answers concise: short paragraphs or a few bullet points, no long essays. End with one useful follow-up suggestion when appropriate.
+6. Reply in the same language the farmer uses, in simple words. Keep answers concise: short paragraphs or a few clear bullet points, no long essays. Format with clean paragraphs and simple bullet points. End with one useful follow-up suggestion when appropriate.
 7. Be respectful and encouraging; farmers may have limited literacy and tech exposure."""
 
 
@@ -51,9 +51,10 @@ class GeminiChatService:
     def _get_api_keys(self) -> List[str]:
         """Collect available Gemini API keys from settings without printing them."""
         keys = []
-        for k in [settings.GEMINI_API_KEY, settings.GEMINI_API_KEY1, settings.GEMINI_API_KEY2, settings.GOOGLE_API_KEY]:
-            if k and k.strip() and k not in keys:
-                keys.append(k.strip())
+        for attr in ["GEMINI_API_KEY", "GEMINI_API_KEY1", "GEMINI_API_KEY2", "GOOGLE_API_KEY"]:
+            val = getattr(settings, attr, None)
+            if val and isinstance(val, str) and val.strip() and val.strip() not in keys:
+                keys.append(val.strip())
         return keys
 
     def _get_client_for_key(self, api_key: str) -> genai.Client:
