@@ -47,6 +47,7 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
   const [loading,    setLoading]   = useState(false);
   const [listening,  setListening] = useState(false);
   const [playingId,  setPlayingId] = useState(null);
+  const [sessionId,  setSessionId] = useState(null);
 
   const bottomRef = useRef(null);
   const audioRef  = useRef(null);
@@ -173,14 +174,26 @@ export default function ChatbotWidget({ currentLang = 'en', setCurrentLang, onBa
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/chat/message', {
+      const payload = {
+        message: text,
+        language: chatLang,
+        ...(sessionId && { session_id: sessionId }),
+        ...(user?.id && { farmer_id: user.id }),
+        ...(user?.district && { district: user.district }),
+        ...(user?.state && { state: user.state }),
+        ...(user?.soil_type && { soil_type: user.soil_type }),
+      };
+      const res = await fetch('http://localhost:8000/api/v1/chatbot/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, language: chatLang }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
-      const replyText = data.response || data.reply;
+      if (data.session_id) {
+        setSessionId(data.session_id);
+      }
+      const replyText = data.reply || data.response;
       const newBotMsg = { id: Date.now() + 1, role: 'assistant', text: replyText, ts: new Date() };
       setMessages(prev => [...prev, newBotMsg]);
     } catch {

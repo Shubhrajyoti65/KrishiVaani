@@ -40,3 +40,27 @@ agri_chat_router = APIRouter(
 )
 async def chat_with_agriculture_assistant(request: ChatRequest) -> ChatResponse:
     return await chat_with_agent(request)
+
+# Additional alias router under /chat
+chat_message_router = APIRouter(
+    prefix="/chat",
+    tags=["Chat Alias"]
+)
+
+@chat_message_router.post(
+    "/message",
+    response_model=ChatResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Chat alias for frontend widget (/chat/message)"
+)
+async def chat_message_alias(request: ChatRequest) -> ChatResponse:
+    return await chat_with_agent(request)
+
+@chat_message_router.post(
+    "/",
+    response_model=ChatResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Chat alias (/chat)"
+)
+async def chat_alias(request: ChatRequest) -> ChatResponse:
+    return await chat_with_agent(request)

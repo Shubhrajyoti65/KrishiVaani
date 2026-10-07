@@ -1,0 +1,581 @@
+{
+  "phase2": {
+    "farmer_create": {
+      "status": 201,
+      "time": 2.2048990726470947,
+      "data": {
+        "id": "f_e2369375ad94",
+        "phone_number": "9191328600",
+        "name": "Devendra Patnaik QA",
+        "state": "Odisha",
+        "district": "Puri",
+        "village": "Pipili",
+        "soil_type": "Alluvial",
+        "land_area_acres": 1.0,
+        "preferred_language": "or",
+        "irrigation_source": null,
+        "primary_crops": null,
+        "created_at": "2026-10-06T23:16:43.106559+00:00",
+        "updated_at": "2026-10-06T23:16:43.106559+00:00"
+      }
+    },
+    "farmer_read_id": {
+      "status": 200,
+      "time": 2.106919050216675
+    },
+    "farmer_read_phone": {
+      "status": 200,
+      "time": 2.116776466369629
+    },
+    "farmer_patch": {
+      "status": 200,
+      "time": 2.214257001876831
+    },
+    "farmer_delete_attempt": {
+      "status": null,
+      "time": 2.068887948989868,
+      "notes": "No response"
+    },
+    "soil_test_add": {
+      "status": 201,
+      "time": 2.16050386428833
+    },
+    "farm_history_add": {
+      "status": 201,
+      "time": 2.5965898036956787,
+      "body": {
+        "id": "fh_50519f04f7f4",
+        "farmer_id": "f_e2369375ad94",
+        "year": 2024,
+        "season": "Kharif",
+        "crop": "Rice",
+        "area_acres": 4.0,
+        "yield_obtained_quintals": 58.0,
+        "yield_per_acre_quintals": 14.5,
+        "production_cost_inr": 42000.0,
+        "revenue_inr": 87000.0,
+        "disease_experienced": "Minor Brown Spot",
+        "soil_condition_note": "Clay loam, adequate moisture",
+        "recorded_at": "2026-10-06T23:16:56.173339+00:00",
+        "crop_name": "Rice",
+        "yield_quintals": 58.0,
+        "net_profit_inr": 45000.0
+      }
+    },
+    "farm_history_get": {
+      "status": 200,
+      "time": 2.4116387367248535,
+      "count": 1
+    },
+    "full_history_get": {
+      "status": 200,
+      "time": 2.2178118228912354,
+      "keys": [
+        "farmer_id",
+        "farmer_name",
+        "location",
+        "total_area_acres",
+        "soil_tests",
+        "crop_history"
+      ]
+    },
+    "mongo_persistence": {
+      "error": "No module named 'backend'"
+    },
+    "crop_recommendation": [
+      {
+        "case": "Punjab_Alluvial_Wheat",
+        "status": 200,
+        "time": 2.05544114112854,
+        "primary": "maize",
+        "confidence": 0.3257,
+        "top_recommendations": [
+          "maize",
+          "coffee",
+          "cotton"
+        ]
+      },
+      {
+        "case": "Maharashtra_BlackSoil_Cotton",
+        "status": 200,
+        "time": 2.0516092777252197,
+        "primary": "rice",
+        "confidence": 0.6866,
+        "top_recommendations": [
+          "rice",
+          "jute",
+          "coffee"
+        ]
+      },
+      {
+        "case": "Rajasthan_Sandy_Mothbeans",
+        "status": 200,
+        "time": 2.0387918949127197,
+        "primary": "mango",
+        "confidence": 0.6612,
+        "top_recommendations": [
+          "mango",
+          "mothbeans",
+          "pigeonpeas"
+        ]
+      },
+      {
+        "case": "Kerala_Laterite_Coffee_Coconut",
+        "status": 200,
+        "time": 2.05975341796875,
+        "primary": "rice",
+        "confidence": 0.9747,
+        "top_recommendations": [
+          "rice",
+          "coffee",
+          "coconut"
+        ]
+      },
+      {
+        "case": "UP_ClayLoam_Rice",
+        "status": 200,
+        "time": 2.053248882293701,
+        "primary": "rice",
+        "confidence": 0.9946,
+        "top_recommendations": [
+          "rice",
+          "jute",
+          "coffee"
+        ]
+      }
+    ],
+    "yield_prediction": [
+      {
+        "crop": "rice",
+        "state": "Punjab",
+        "area": 5.0,
+        "status": 200,
+        "time": 2.102926254272461,
+        "predicted_yield_per_acre": 8.01,
+        "total_production": 40.05,
+        "min_revenue": 82903.5,
+        "max_revenue": 105932.25,
+        "risk_assessment": [
+          "Low Risk: Weather and soil parameters match recommended agronomic bands."
+        ]
+      },
+      {
+        "crop": "wheat",
+        "state": "Haryana",
+        "area": 3.0,
+        "status": 200,
+        "time": 2.041383743286133,
+        "predicted_yield_per_acre": 7.41,
+        "total_production": 22.23,
+        "min_revenue": 45515.93,
+        "max_revenue": 58159.24,
+        "risk_assessment": [
+          "Low Risk: Weather and soil parameters match recommended agronomic bands."
+        ]
+      },
+      {
+        "crop": "cotton",
+        "state": "Maharashtra",
+        "area": 10.0,
+        "status": 200,
+        "time": 2.0526022911071777,
+        "predicted_yield_per_acre": 3.93,
+        "total_production": 39.3,
+        "min_revenue": 251869.77,
+        "max_revenue": 321833.59,
+        "risk_assessment": [
+          "Low Risk: Weather and soil parameters match recommended agronomic bands."
+        ]
+      },
+      {
+        "crop": "maize",
+        "state": "Bihar",
+        "area": 2.5,
+        "status": 200,
+        "time": 2.069005012512207,
+        "predicted_yield_per_acre": 7.37,
+        "total_production": 18.43,
+        "min_revenue": 36906.08,
+        "max_revenue": 47157.76,
+        "risk_assessment": [
+          "Low Risk: Weather and soil parameters match recommended agronomic bands."
+        ]
+      },
+      {
+        "crop": "sugarcane",
+        "state": "Uttar Pradesh",
+        "area": 4.0,
+        "status": 200,
+        "time": 2.0536086559295654,
+        "predicted_yield_per_acre": 197.69,
+        "total_production": 790.76,
+        "min_revenue": 224180.46,
+        "max_revenue": 286452.81,
+        "risk_assessment": [
+          "Low Risk: Weather and soil parameters match recommended agronomic bands."
+        ]
+      }
+    ],
+    "crop_planning": {
+      "status": 200,
+      "time": 2.1718735694885254,
+      "years_count": 3,
+      "years": [
+        "Year 1 (Current Season): Coffee (Kharif)",
+        "Year 2 (Next Year): Chickpea (Rabi)",
+        "Year 3 (Second Following Year): Wheat (Rabi / Annual)"
+      ],
+      "soil_actions_count": 3,
+      "soil_rotation_strategies": [
+        "Follow the 3-Year Sequence: Coffee → Chickpea (Legume Break) → Wheat (Restorative Crop).",
+        "Strictly avoid consecutive cereal-cereal or solanaceous-solanaceous monoculture to break soil-borne root pathogens."
+      ]
+    },
+    "disease_detection": [
+      {
+        "test_image": "healthy_leaf",
+        "crop_hint": "wheat",
+        "status": 200,
+        "time": 2.846017837524414,
+        "diagnosed_crop": "Wheat",
+        "condition": "Healthy Wheat Crop",
+        "confidence": 0.61,
+        "severity": "Healthy",
+        "rag_citations_count": 1,
+        "has_llm_guidance": true,
+        "chemical_options_count": 0,
+        "model_source": "DigiGreen/crop-disease-pest-detection-dg"
+      },
+      {
+        "test_image": "rice_blast_symptom",
+        "crop_hint": "rice",
+        "status": 200,
+        "time": 2.4879918098449707,
+        "diagnosed_crop": "Rice",
+        "condition": "Rice Blast (Magnaporthe oryzae)",
+        "confidence": 0.251,
+        "severity": "Moderate",
+        "rag_citations_count": 2,
+        "has_llm_guidance": true,
+        "chemical_options_count": 0,
+        "model_source": "DigiGreen/crop-disease-pest-detection-dg"
+      },
+      {
+        "test_image": "blight_symptom",
+        "crop_hint": "potato",
+        "status": 200,
+        "time": 2.4168760776519775,
+        "diagnosed_crop": "Potato",
+        "condition": "Common Scab (Potato)",
+        "confidence": 0.087,
+        "severity": "Moderate",
+        "rag_citations_count": 1,
+        "has_llm_guidance": true,
+        "chemical_options_count": 0,
+        "model_source": "DigiGreen/crop-disease-pest-detection-dg"
+      }
+    ],
+    "rag_retrieval": {
+      "in_domain": {
+        "status": 200,
+        "time": 2.0443007946014404,
+        "count": 3,
+        "citations": [
+          "Integrated Disease Management for Rice Blast (Magnaporthe oryzae)",
+          "Management of Brown Spot in Paddy (Bipolaris oryzae / Helminthosporium oryzae)",
+          "Soil Organic Carbon Enhancement, Bio-fertilizers, and Green Manuring Practices"
+        ]
+      },
+      "out_of_domain": {
+        "status": 200,
+        "time": 2.0496795177459717,
+        "count": 3,
+        "notes": "Returns 0 relevant citations or standard agricultural corpus without hallucination"
+      }
+    },
+    "satellite_ndvi": {
+      "up_farm": {
+        "status": 200,
+        "time": 2.051415205001831,
+        "data": {
+          "farm_name": "Lucknow UP Farm",
+          "location_coords": {
+            "latitude": 26.8467,
+            "longitude": 80.9462
+          },
+          "satellite_constellation": "Sentinel-2 L2A (Multispectral 10m Resolution)",
+          "last_satellite_pass_date": "2026-10-05",
+          "ndvi_metrics": {
+            "mean_ndvi": 0.431,
+            "max_ndvi": 0.551,
+            "min_ndvi": 0.251,
+            "canopy_health_status": "Stressed - Sparse Canopy",
+            "water_stress_index_ndwi": 0.202
+          },
+          "historical_trend_30d": [
+            {
+              "date": "2026-09-07",
+              "ndvi_value": 0.311
+            },
+            {
+              "date": "2026-09-13",
+              "ndvi_value": 0.335
+            },
+            {
+              "date": "2026-09-19",
+              "ndvi_value": 0.359
+            },
+            {
+              "date": "2026-09-25",
+              "ndvi_value": 0.383
+            },
+            {
+              "date": "2026-10-01",
+              "ndvi_value": 0.407
+            },
+            {
+              "date": "2026-10-07",
+              "ndvi_value": 0.431
+            }
+          ],
+          "canopy_advisories": [
+            "Sub-optimal vegetation index detected. Crop exhibits moisture stress or nutrient deficiency.",
+            "Inspect field for soil moisture deficit or localized pest infestation."
+          ]
+        }
+      },
+      "odisha_farm": {
+        "status": 200,
+        "time": 2.0525963306427,
+        "data": {
+          "farm_name": "Bhubaneswar Odisha Farm",
+          "location_coords": {
+            "latitude": 20.4625,
+            "longitude": 85.883
+          },
+          "satellite_constellation": "Sentinel-2 L2A (Multispectral 10m Resolution)",
+          "last_satellite_pass_date": "2026-10-05",
+          "ndvi_metrics": {
+            "mean_ndvi": 0.519,
+            "max_ndvi": 0.639,
+            "min_ndvi": 0.339,
+            "canopy_health_status": "Healthy - Moderate Growth",
+            "water_stress_index_ndwi": 0.263
+          },
+          "historical_trend_30d": [
+            {
+              "date": "2026-09-07",
+              "ndvi_value": 0.399
+            },
+            {
+              "date": "2026-09-13",
+              "ndvi_value": 0.423
+            },
+            {
+              "date": "2026-09-19",
+              "ndvi_value": 0.447
+            },
+            {
+              "date": "2026-09-25",
+              "ndvi_value": 0.471
+            },
+            {
+              "date": "2026-10-01",
+              "ndvi_value": 0.495
+            },
+            {
+              "date": "2026-10-07",
+              "ndvi_value": 0.519
+            }
+          ],
+          "canopy_advisories": [
+            "Vegetation index is in normal range for active vegetative/flowering stage.",
+            "Ensure timely top-dressing of Nitrogen to maintain growth trajectory."
+          ]
+        }
+      }
+    },
+    "weather": {
+      "punjab": {
+        "status": 200,
+        "time": 2.7297773361206055,
+        "temp": 23.6,
+        "humidity": 82.0,
+        "condition": "Clear Sky"
+      },
+      "odisha": {
+        "status": 200,
+        "time": 2.5148653984069824,
+        "temp": 26.0,
+        "humidity": 88.0,
+        "condition": "Clear Sky"
+      }
+    },
+    "sarvam_ai": {
+      "translate_hi": {
+        "status": 200,
+        "time": 3.6381142139434814,
+        "data": {
+          "original_text": "Recommended crop for your farm is Rice with high yield potential.",
+          "translated_text": "आपके खेत के लिए उच्च उपज क्षमता वाला चावल अनुशंसित फसल है।",
+          "source_language": "en",
+          "target_language": "hi",
+          "engine": "Sarvam AI (mayura:v1)"
+        }
+      },
+      "translate_or": {
+        "status": 200,
+        "time": 3.993905544281006,
+        "data": {
+          "original_text": "Recommended crop for your farm is Rice with high yield potential.",
+          "translated_text": "ଆପଣଙ୍କ କୃଷିକ୍ଷେତ୍ର ପାଇଁ ଅଧିକ ଉତ୍ପାଦନ ସମ୍ଭାବନା ଥିବା ଧାନ ହେଉଛି ସୁପାରିଶ କରାଯାଇଥିବା ଫସଲ ।",
+          "source_language": "en",
+          "target_language": "or",
+          "engine": "Sarvam AI (mayura:v1)"
+        }
+      },
+      "tts": {
+        "status": 200,
+        "time": 2.8304381370544434,
+        "engine": "KrishiVaani Offline Audio Synthesizer",
+        "audio_len": 428
+      },
+      "stt": {
+        "status": 200,
+        "time": 2.6040890216827393,
+        "engine": "KrishiVaani Offline Speech Engine",
+        "transcript": "मेरे खेत के लिए सबसे अच्छी फसल कौन सी है और मौसम कैसा रहेगा?"
+      }
+    }
+  },
+  "phase3": {
+    "journey": [
+      {
+        "step": "1. Register Farmer",
+        "success": true,
+        "time": 2.5767667293548584,
+        "id": "f_612d52d45592"
+      },
+      {
+        "step": "2. Add Soil Test",
+        "success": true,
+        "time": 2.166339159011841
+      },
+      {
+        "step": "3. Crop Recommendation",
+        "success": true,
+        "recommended_crop": "jute",
+        "time": 2.062671422958374
+      },
+      {
+        "step": "4. Yield Prediction",
+        "success": true,
+        "yield_q_acre": 28.61,
+        "time": 2.060584783554077
+      },
+      {
+        "step": "5. 3-Year Plan",
+        "success": true,
+        "time": 2.0852367877960205
+      },
+      {
+        "step": "6. Satellite NDVI",
+        "success": true,
+        "time": 2.0517027378082275
+      },
+      {
+        "step": "7. Disease Image Diagnosis",
+        "success": true,
+        "diagnosis": "Rice Blast (Magnaporthe oryzae)",
+        "time": 2.3593642711639404
+      },
+      {
+        "step": "8. Hindi Follow-up Query",
+        "success": true,
+        "time": 8.150474786758423,
+        "answer_snippet": "📚 **Grounded Agricultural Knowledge (ICAR / CIBRC)**\nNo specific authoritative a"
+      },
+      {
+        "step": "9. Save to Farm History",
+        "success": true,
+        "time": 2.156059741973877
+      },
+      {
+        "step": "10. Confirm Unified History",
+        "success": true,
+        "time": 2.224841356277466
+      }
+    ],
+    "all_passed": true
+  },
+  "phase4": {
+    "edge_cases": [
+      {
+        "case": "Missing required fields (empty JSON)",
+        "endpoint": "POST /crop-recommendation/predict",
+        "status": 422,
+        "time": 2.0492663383483887,
+        "expected_status": 422,
+        "graceful": true
+      },
+      {
+        "case": "Invalid coordinates (latitude=999.0)",
+        "endpoint": "POST /satellite/ndvi",
+        "status": 422,
+        "time": 2.045931816101074,
+        "expected_status": 422,
+        "graceful": true
+      },
+      {
+        "case": "Unsupported file format (.txt)",
+        "endpoint": "POST /disease-detection/analyze",
+        "status": 400,
+        "time": 2.04164719581604,
+        "expected_status": 400,
+        "graceful": true
+      },
+      {
+        "case": "Corrupt image bytes",
+        "endpoint": "POST /disease-detection/analyze",
+        "status": 400,
+        "time": 2.146322250366211,
+        "expected_status": 400,
+        "graceful": true
+      },
+      {
+        "case": "Empty audio string in speech-to-text",
+        "endpoint": "POST /voice-language/speech-to-text",
+        "status": 200,
+        "time": 2.512998104095459,
+        "expected_status": 200,
+        "graceful": true
+      },
+      {
+        "case": "Unsupported target language ('klingon')",
+        "endpoint": "POST /voice-language/translate",
+        "status": 200,
+        "time": 3.2453062534332275,
+        "expected_status": 200,
+        "graceful": true
+      },
+      {
+        "case": "Non-existent farmer ID lookup",
+        "endpoint": "GET /farmers/{farmer_id}",
+        "status": 404,
+        "time": 2.107846736907959,
+        "expected_status": 404,
+        "graceful": true
+      },
+      {
+        "case": "Duplicate phone number registration",
+        "endpoint": "POST /farmers/",
+        "status": 400,
+        "time": 2.8714799880981445,
+        "expected_status": 400,
+        "graceful": true
+      }
+    ]
+  },
+  "latencies": {},
+  "errors": []
+}

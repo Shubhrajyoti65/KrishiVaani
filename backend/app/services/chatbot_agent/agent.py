@@ -1,6 +1,6 @@
 """
 KrishiVaani — Real LangChain Tool-Calling Agent
-Uses create_tool_calling_agent with OpenAI/Anthropic LLM.
+Uses create_tool_calling_agent with Google Gemini LLM.
 Falls back to intelligent rule-based routing when no LLM key is set.
 """
 import os
@@ -58,85 +58,53 @@ def _get_llm():
     if _llm is not None:
         return _llm
 
-    openai_key = settings.OPENAI_API_KEY
-    anthropic_key = settings.ANTHROPIC_API_KEY
+    gemini_key = (
+        getattr(settings, "GEMINI_API_KEY", None)
+        or getattr(settings, "GOOGLE_API_KEY", None)
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_API_KEY")
+    )
 
-    primary_llm = None
-    fallback_llms = []
-
-    if openai_key:
+    if gemini_key:
         try:
-            from langchain_openai import ChatOpenAI
-            primary_llm = ChatOpenAI(
-                model="gpt-4o-mini",
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            model_name = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
+            _llm = ChatGoogleGenerativeAI(
+                model=model_name,
+                google_api_key=gemini_key,
                 temperature=0.3,
-                openai_api_key=openai_key,
-                streaming=False,
                 max_retries=1,
             )
+            return _llm
         except Exception:
             pass
-
-    if anthropic_key:
-        try:
-            from langchain_anthropic import ChatAnthropic
-            anth_llm = ChatAnthropic(
-                model="claude-3-haiku-20240307",
-                temperature=0.3,
-                anthropic_api_key=anthropic_key,
-                max_retries=1,
-            )
-            if primary_llm is None:
-                primary_llm = anth_llm
-            else:
-                fallback_llms.append(anth_llm)
-        except Exception:
-            pass
-
-    if primary_llm is not None:
-        if fallback_llms:
-            _llm = primary_llm.with_fallbacks(fallback_llms)
-        else:
-            _llm = primary_llm
-        return _llm
 
     return None  # No LLM configured → fallback mode
 
 
 # ── Build LangChain agent (lazy) ───────────────────────────────────────────────
-_agent_executor = None
+_agent_graph = None
 
 def _get_agent():
-    global _agent_executor
-    if _agent_executor is not None:
-        return _agent_executor
+    global _agent_graph
+    if _agent_graph is not None:
+        return _agent_graph
 
     llm = _get_llm()
     if llm is None:
         return None
 
     try:
-        from langchain.agents import AgentExecutor, create_tool_calling_agent
-        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", SYSTEM_PROMPT),
-            MessagesPlaceholder("chat_history", optional=True),
-            ("human", "{input}"),
-            MessagesPlaceholder("agent_scratchpad"),
-        ])
-
-        agent = create_tool_calling_agent(llm, ALL_TOOLS, prompt)
-        _agent_executor = AgentExecutor(
-            agent=agent,
+        from langchain.agents import create_agent
+        _agent_graph = create_agent(
+            model=llm,
             tools=ALL_TOOLS,
-            verbose=False,
-            handle_parsing_errors=True,
-            max_iterations=5,
-            return_intermediate_steps=True,
+            system_prompt=SYSTEM_PROMPT,
         )
-        return _agent_executor
-    except Exception:
+        return _agent_graph
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("Failed to create LangChain agent: %s", e)
         return None
 
 
@@ -421,6 +389,30 @@ async def _rule_based_response(request: ChatRequest) -> ChatResponse:
         except Exception:
             pass
 
+    # ── General Crop Inquiry ──────────────────────────────────────────────────
+    if not reply_parts:
+        crops_list = ["wheat", "rice", "maize", "cotton", "sugarcane", "mustard", "chickpea", "potato", "soybean", "barley", "groundnut", "jute"]
+        matched_crop = next((c for c in crops_list if c in msg), None)
+        if matched_crop:
+            try:
+                from backend.app.services.chatbot_agent.tools import get_crop_calendar_tool
+                cal_raw = get_crop_calendar_tool.invoke({"state": request.state or "Punjab", "crop": matched_crop})
+                cal_data = json.loads(cal_raw)
+                tools_invoked.append(ToolInvocationResult(
+                    tool_name="get_crop_calendar_tool",
+                    input_args={"crop": matched_crop, "state": request.state or "Punjab"},
+                    output_summary=f"Sowing calendar for {matched_crop}"
+                ))
+                reply_parts.append(
+                    f"🌾 **Crop Overview — {matched_crop.capitalize()}**\n"
+                    f"• Recommended Sowing Season: {cal_data.get('season', 'Standard')}\n"
+                    f"• Sowing Period: {cal_data.get('sowing_window', 'Optimal season window')}\n"
+                    f"• Harvesting Window: {cal_data.get('harvest_window', 'Maturity stage')}\n"
+                    f"• Key Agronomic Advice: Ensure balanced NPK fertilization and timely irrigation."
+                )
+            except Exception:
+                pass
+
     # ── Default greeting/help ─────────────────────────────────────────────────
     if not reply_parts:
         reply_parts.append(
@@ -453,41 +445,78 @@ class KrishiVaaniAgent:
         # Generate or use provided session ID for memory
         session_id = getattr(request, "session_id", None) or str(uuid.uuid4())
 
-        agent_executor = _get_agent()
+        agent = _get_agent()
 
         # ── Path A: Real LangChain agent ──────────────────────────────────────
-        if agent_executor is not None:
+        if agent is not None:
             try:
+                context_notes = []
+                if request.district or request.state:
+                    loc = ", ".join(filter(None, [request.district, request.state]))
+                    context_notes.append(f"Location: {loc}")
+                if request.soil_type:
+                    context_notes.append(f"Soil Type: {request.soil_type}")
+                if request.language and request.language != "en":
+                    context_notes.append(f"Preferred Language: {request.language}")
+
+                user_prompt = request.message
+                if context_notes:
+                    user_prompt = f"[{' | '.join(context_notes)}]\nUser Question: {user_prompt}"
+
                 history = get_messages(session_id)
-                result = await agent_executor.ainvoke({
-                    "input": request.message,
-                    "chat_history": history,
-                })
-                reply = result.get("output", "")
+                formatted_messages = []
+                for msg in history:
+                    role = "user" if getattr(msg, "type", "") == "human" else "assistant"
+                    formatted_messages.append({"role": role, "content": msg.content})
+                formatted_messages.append({"role": "user", "content": user_prompt})
 
-                # Save to memory
-                save_exchange(session_id, request.message, reply)
+                result = await agent.ainvoke({"messages": formatted_messages})
+                messages_out = result.get("messages", [])
 
-                # Extract tool calls from intermediate steps
+                reply = ""
                 tools_invoked = []
-                for step in result.get("intermediate_steps", []):
-                    action, observation = step
-                    tools_invoked.append(ToolInvocationResult(
-                        tool_name=action.tool,
-                        input_args=action.tool_input if isinstance(action.tool_input, dict) else {"input": str(action.tool_input)},
-                        output_summary=str(observation)[:200],
-                    ))
+                for msg in messages_out:
+                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                        for tc in msg.tool_calls:
+                            tools_invoked.append(ToolInvocationResult(
+                                tool_name=tc.get("name", "tool"),
+                                input_args=tc.get("args", {}) if isinstance(tc.get("args"), dict) else {},
+                                output_summary="Tool executed"
+                            ))
+                    if hasattr(msg, "content") and getattr(msg, "name", None):
+                        t_content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                        for ti in tools_invoked:
+                            if ti.tool_name == msg.name and ti.output_summary == "Tool executed":
+                                ti.output_summary = t_content[:200]
+                                break
 
-                return ChatResponse(
-                    reply=reply,
-                    language=request.language,
-                    tools_invoked=tools_invoked,
-                    structured_payload=None,
-                    session_id=session_id,
-                )
+                # Extract last AI message content
+                for msg in reversed(messages_out):
+                    if type(msg).__name__ in ("AIMessage", "AIMessageChunk") or getattr(msg, "role", "") == "assistant":
+                        c = msg.content
+                        if isinstance(c, list):
+                            reply = "".join([item.get("text", "") for item in c if isinstance(item, dict)])
+                        else:
+                            reply = str(c)
+                        if reply.strip():
+                            break
+
+                if not reply and messages_out:
+                    c = messages_out[-1].content
+                    reply = str(c) if not isinstance(c, list) else "".join([item.get("text", "") for item in c if isinstance(item, dict)])
+
+                if reply.strip():
+                    save_exchange(session_id, request.message, reply)
+                    return ChatResponse(
+                        reply=reply,
+                        language=request.language,
+                        tools_invoked=tools_invoked,
+                        structured_payload=None,
+                        session_id=session_id,
+                    )
             except Exception as e:
-                # If LangChain agent fails, fall through to rule-based
-                pass
+                import logging
+                logging.getLogger(__name__).exception("Agent invocation failed, falling back to rule-based: %s", e)
 
         # ── Path B: Rule-based fallback ───────────────────────────────────────
         response = await _rule_based_response(request)

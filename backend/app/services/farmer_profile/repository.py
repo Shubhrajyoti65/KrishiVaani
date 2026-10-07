@@ -171,4 +171,21 @@ class FarmerRepository:
             docs_sorted = sorted(docs, key=lambda x: (x["year"], x["recorded_at"]), reverse=True)
             return [FarmHistoryRecordResponse(**doc) for doc in docs_sorted]
 
+    async def delete_farmer(self, farmer_id: str) -> bool:
+        if db_manager.is_connected:
+            result = await db_manager.db["farmers"].delete_one({"id": farmer_id})
+            if result.deleted_count > 0:
+                await db_manager.db["soil_tests"].delete_many({"farmer_id": farmer_id})
+                await db_manager.db["farm_history"].delete_many({"farmer_id": farmer_id})
+                return True
+            return False
+        else:
+            if farmer_id in _in_memory_farmers:
+                del _in_memory_farmers[farmer_id]
+                _in_memory_soil_tests.pop(farmer_id, None)
+                if hasattr(self, "_in_memory_history"):
+                    self._in_memory_history.pop(farmer_id, None)
+                return True
+            return False
+
 farmer_repository = FarmerRepository()

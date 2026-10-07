@@ -15,9 +15,8 @@ httpx>=0.24.0
 langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.2.0
-# LLM providers (at least one needed for real AI responses)
-langchain-openai>=0.1.0
-langchain-anthropic>=0.1.0
+# LLM provider (Google Gemini API)
+langchain-google-genai>=2.0.0
 # Database
 motor>=3.3.0
 pymongo>=4.6.0

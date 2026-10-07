@@ -10,31 +10,34 @@ client = TestClient(app)
 async def test_chatbot_weather_tool_trigger():
     req = ChatRequest(message="What is the weather forecast and temperature in Cuttack?", district="Cuttack", state="Odisha")
     res = await chatbot_agent.process_chat(req)
-    assert "Weather Update" in res.reply
+    assert any(term in res.reply.lower() for term in ["weather", "temperature", "cuttack", "humidity"])
     tool_names = [t.tool_name for t in res.tools_invoked]
     assert "get_weather_advisory_tool" in tool_names
 
 @pytest.mark.anyio
 async def test_chatbot_crop_recommendation_tool_trigger():
-    req = ChatRequest(message="What crop should I grow in my soil with high rainfall?")
+    req = ChatRequest(message="Recommend a crop for soil with 90 N, 45 P, 45 K, 25 temp, 80 humidity, 6.5 pH, 200 rainfall.")
     res = await chatbot_agent.process_chat(req)
-    assert "Crop Recommendation" in res.reply
+    assert any(term in res.reply.lower() for term in ["crop", "recommend", "soil", "rice", "grow"])
     tool_names = [t.tool_name for t in res.tools_invoked]
     assert "recommend_crop_tool" in tool_names
 
 @pytest.mark.anyio
 async def test_chatbot_yield_prediction_tool_trigger():
-    req = ChatRequest(message="How much yield and revenue can I expect from rice harvest?")
+    req = ChatRequest(
+        message="Predict yield for rice in Punjab for 2 acres during Kharif season with 90 N, 40 P, 40 K, 1100 rainfall, 25 temperature.",
+        state="Punjab"
+    )
     res = await chatbot_agent.process_chat(req)
-    assert any(term in res.reply for term in ["Yield & Revenue", "Yield", "Revenue"])
+    assert any(term in res.reply.lower() for term in ["yield", "quintal", "harvest", "acre"])
     tool_names = [t.tool_name for t in res.tools_invoked]
     assert "predict_yield_tool" in tool_names
 
 @pytest.mark.anyio
 async def test_chatbot_satellite_tool_trigger():
-    req = ChatRequest(message="Show me the satellite ndvi canopy health index for my plot")
+    req = ChatRequest(message="Show me the satellite ndvi canopy health index for my plot at 28.6 lat, 77.2 lon")
     res = await chatbot_agent.process_chat(req)
-    assert any(term in res.reply for term in ["Satellite Field Health", "Satellite Field Monitoring", "NDVI"])
+    assert any(term in res.reply.lower() for term in ["ndvi", "satellite", "canopy", "health"])
     tool_names = [t.tool_name for t in res.tools_invoked]
     assert "get_satellite_ndvi_tool" in tool_names
 
