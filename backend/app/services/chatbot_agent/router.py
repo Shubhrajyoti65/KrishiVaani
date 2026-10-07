@@ -7,23 +7,24 @@ from backend.app.services.chatbot_agent.agent import chatbot_agent
 
 router = APIRouter(
     prefix="/chatbot",
-    tags=["LangChain Tool-Calling Conversational Chatbot Agent"]
+    tags=["KrishiMitra Google Gemini AI Agricultural Chatbot"]
 )
 
 @router.post(
     "/chat",
     response_model=ChatResponse,
     status_code=status.HTTP_200_OK,
-    summary="Chat with KrishiVaani Tool-Calling AI Assistant",
-    description="Processes farmer queries in natural language, automatically triggers underlying ML models (crop rec, yield prediction, weather advisory, disease detection, satellite NDVI), and returns a formatted conversational reply with structured payloads."
+    summary="Chat with KrishiMitra Gemini AI Assistant",
+    description="Processes farmer queries with direct Google Gemini integration, personalized with MongoDB farmer profile, live weather, satellite NDVI, and RAG agricultural guidelines."
 )
 async def chat_with_agent(request: ChatRequest) -> ChatResponse:
     try:
         return await chatbot_agent.process_chat(request)
     except Exception as e:
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE if ("429" in str(e) or "quota" in str(e).lower()) else status.HTTP_500_INTERNAL_SERVER_ERROR
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Chatbot agent error: {str(e)}"
+            status_code=status_code,
+            detail=f"Chatbot error: {str(e)}"
         )
 
 # Additional alias router under /agriculture

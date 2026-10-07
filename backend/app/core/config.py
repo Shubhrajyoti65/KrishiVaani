@@ -26,9 +26,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "krishivaani-default-dev-secret-change-in-prod"
 
     # LLM — Google Gemini API
-    GEMINI_API_KEY: Optional[str] = None
+    -: Optional[str] = None
+    GEMINI_API_KEY1: Optional[str] = None
+    GEMINI_API_KEY2: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_FALLBACK_MODELS: str = "gemini-3.5-flash-lite,gemini-flash-lite-latest"
 
     # Weather
     OPENWEATHERMAP_API_KEY: Optional[str] = None

@@ -1,10 +1,29 @@
 """
-KrishiVaani — LangChain Tool Definitions
-All ML models and external services wrapped as @tool for the agent.
+KrishiVaani — Agricultural Service Tool Definitions
+Direct tool wrappers around ML models and services.
 """
+import functools
 import json
-from typing import Optional
-from langchain_core.tools import tool
+from typing import Optional, Callable, Any, Dict
+
+class ToolWrapper:
+    """Lightweight tool wrapper providing callable and .invoke(args) interface."""
+    def __init__(self, fn: Callable):
+        self.fn = fn
+        self.__name__ = fn.__name__
+        self.__doc__ = fn.__doc__
+        functools.update_wrapper(self, fn)
+
+    def invoke(self, args: Any) -> Any:
+        if isinstance(args, dict):
+            return self.fn(**args)
+        return self.fn(args)
+
+    def __call__(self, *args, **kwargs) -> Any:
+        return self.fn(*args, **kwargs)
+
+def tool(fn: Callable) -> ToolWrapper:
+    return ToolWrapper(fn)
 
 from backend.app.services.crop_recommendation.model import crop_engine
 from backend.app.services.crop_recommendation.schema import CropRecommendationRequest
